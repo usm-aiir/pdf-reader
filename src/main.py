@@ -1,33 +1,29 @@
 from pypdf import PdfReader
 
-def open_local_file(filename: str) -> PdfReader:
-    return PdfReader(filename)
+class PDFSection:
+    name: str
+    content: str
+    def __init__(self, name):
+        self.name = name
+        self.content = ''
+    def append(self, content):
+        self.content += content
 
-def print_pdf_text_raw(reader: PdfReader):
-    text = ''
+def arrange_pdf_fragments(reader: PdfReader) -> list[str]:
+    fragments = []
     for page in reader.pages:
-        text += page.extract_text()
-    print(text)
+        def visitor_func(text: str, cm, tm, font_dict, font_size: float):
+            fragments.append(text)
+        page.extract_text(visitor_text=visitor_func)
+    return fragments
 
-def example_print_text_raw():
-    example = open_local_file('example/example.pdf')
-    print_pdf_text_raw(example)
-    example.close()
+def test_pdf_fragments(example_pdf: PdfReader):
+    print(arrange_pdf_fragments(example_pdf))
 
-def get_pdf_chunks(reader: PdfReader) -> list[str]:
-    chunks = []
-    for page in reader.pages:
-        page_chunks = []
-        def visition_func(text, cm, tm, font_dict, font_size):
-            page_chunks.append(text)
-        page.extract_text(visitor_text=visition_func)
-        chunks += page_chunks
-    return chunks
+def test_all():
+    example_pdf = PdfReader('example/example.pdf')
+    test_pdf_fragments(example_pdf)
+    example_pdf.close()
 
-def example_print_chunks():
-    example = open_local_file('example/example.pdf')
-    print(get_pdf_chunks(example))
-    example.close()
-
-# example_print_text_raw()
-example_print_chunks()
+if __name__ == '__main__':
+    test_all()
