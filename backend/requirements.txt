@@ -1,3 +1,4 @@
 pix2text
 pix2tex
-nicegui
+Flask
+Flask-Cors
