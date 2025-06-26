@@ -1,148 +1,98 @@
-import React, { useRef, useEffect, useState } from 'react';
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker&url';
+// import React, { useState, useEffect } from 'react';
+// import { PdfHighlighter, set  } from 'react-pdf-highlighter-extended';
+// import { Worker, Viewer } from '@react-pdf-viewer/core'; // For basic PDF viewing if you want to combine
+// import { highlightPlugin } from '@react-pdf-viewer/highlight'; // For react-pdf-viewer's highlight plugin
 
-// Set the workerSrc for pdf.js
-// This tells pdf.js where to find its worker file.
-// In a production environment, you might serve this from a CDN or your own static files.
-// // For development, we can point to the unpkg CDN.
-// pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+import { useState } from "react";
+import { AreaHighlight, PdfHighlighter, PdfLoader, TextHighlight, useHighlightContainerContext, usePdfHighlighterContext, type Highlight, type PdfHighlighterUtils } from "react-pdf-highlighter-extended";
 
-interface PdfViewerProps {
-    pdfUrl: string;
+// // Import PDF.js worker for react-pdf-highlighter-extended and react-pdf-viewer
+// import { pdfjs } from 'react-pdf'; // Using react-pdf for worker setup simplicity
+// pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+
+// // You'll need these CSS imports for proper styling
+// import 'react-pdf-highlighter-extended/dist/style.css'; // Essential for highlighter styles
+// import '@react-pdf-viewer/core/lib/styles/index.css'; // Core styles for react-pdf-viewer
+// import '@react-pdf-viewer/highlight/lib/styles/index.css'; // Highlight plugin styles for react-pdf-viewer
+
+interface MathHighlightContainerProps {
+    editHighlight: (id: string, edit: Partial<MathHighlight>) => void;
 }
 
-const PdfViewer: React.FC<PdfViewerProps> = ({ pdfUrl }) => {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-    const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
-    const [pageNum, setPageNum] = useState(1);
-    const [pageRendering, setPageRendering] = useState(false);
-    const [pageNumPending, setPageNumPending] = useState<number | null>(null);
+const MathHighlightContainer: React.FC<MathHighlightContainerProps> = ({ editHighlight }) => {
+    const {
+    highlight, // The highlight being rendred
+    viewportToScaled, // Convert a highlight position to platform agnostic coords (useful for saving edits)
+    screenshot, // Screenshot a bounding rectangle
+    isScrolledTo, // Whether the highlight has been auto-scrolled to
+    highlightBindings, // Whether the highlight has been auto-scrolled to
+  } = useHighlightContainerContext();
 
-    // Function to render a specific page
-    const renderPage = async (num: number) => {
-        setPageRendering(true);
-        const canvas = canvasRef.current;
-        if (!canvas) {
-            setPageRendering(false);
-            return;
-        }
-        const context = canvas.getContext('2d');
-        if (!context) {
-            setPageRendering(false);
-            return;
-        }
+  const {
+    currentTip,
+    setTip,
+    toggleEditInProgress,
+    isEditInProgress
+  } = useTipViewerUtils();
 
-        try {
-            if (!pdfDoc) {
-                setPageRendering(false);
-                return;
-            }
-            const page = await pdfDoc.getPage(num);
-            const viewport = page.getViewport({ scale: 1.5 }); // Adjust scale as needed
+  const { toggleEditInProgress } =
+    usePdfHighlighterContext();
 
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
+  const isTextHighlight = !Boolean(
+    highlight.content && highlight.content.image
+  );
 
-            const renderContext = {
-                canvasContext: context,
-                viewport: viewport,
-            };
-            const renderTask = page.render(renderContext);
-
-            renderTask.promise.then(() => {
-                setPageRendering(false);
-                if (pageNumPending !== null) {
-                    // New page rendering is pending
-                    renderPage(pageNumPending);
-                    setPageNumPending(null);
-                }
-            });
-        } catch (error) {
-            console.error('Error rendering page:', error);
-            setPageRendering(false);
-        }
-    };
-
-    const queueRenderPage = (num: number) => {
-        if (pageRendering) {
-            setPageNumPending(num);
-        } else {
-            renderPage(num);
-        }
-    };
-
-    // Load PDF when pdfUrl changes
-    useEffect(() => {
-        const loadPdf = async () => {
-            if (!pdfUrl) {
-                setPdfDoc(null);
-                return;
-            }
-
-            try {
-                const loadingTask = pdfjsLib.getDocument("http://localhost:9090/get_pdf/" + pdfUrl);
-                const pdf = await loadingTask.promise;
-                setPdfDoc(pdf);
-                setPageNum(1); // Reset to first page when new PDF loads
-            } catch (error) {
-                console.error('Error loading PDF:', error);
-                setPdfDoc(null);
-            }
+  const component = isTextHighlight ? (
+    <TextHighlight
+      isScrolledTo={isScrolledTo}
+      highlight={highlight}
+    />
+  ) : (
+    <AreaHighlight
+      isScrolledTo={isScrolledTo}
+      highlight={highlight}
+      onChange={(boundingRect) => {
+        const edit = {
+          position: {
+            boundingRect: viewportToScaled(boundingRect),
+            rects: [],
+          },
+          content: {
+            image: screenshot(boundingRect),
+          },
         };
 
-        loadPdf();
-    }, [pdfUrl]);
+        editHighlight(highlight.id, edit);
+        toggleEditInProgress(false);
+      }}
+      bounds={highlightBindings.textLayer}
+      onEditStart={() => toggleEditInProgress(true)}
+    />
+  );
 
-    // Render page when pdfDoc or pageNum changes
-    useEffect(() => {
-        if (pdfDoc) {
-            queueRenderPage(pageNum);
-        }
-    }, [pdfDoc, pageNum]);
-
-
-    const onPrevPage = () => {
-        if (pageNum <= 1) {
-            return;
-        }
-        setPageNum(prevPageNum => prevPageNum - 1);
-    };
-
-    const onNextPage = () => {
-        if (pdfDoc && pageNum >= pdfDoc.numPages) {
-            return;
-        }
-        setPageNum(prevPageNum => prevPageNum + 1);
-    };
+  return (component);
 
 
-    if (!pdfUrl) {
-        return <div>Please provide a PDF URL to display.</div>;
-    }
+interface PDFViewerProps {
+    pdfUrl: string;
+    highlights: MathHighlight[];
+}
 
-    if (!pdfDoc) {
-        return <div>Loading PDF...</div>;
-    }
-
+const PDFViewer: React.FC<PDFViewerProps> = ({ pdfUrl, highlights }) => {
+    const [pdfHighlighterUtils, setPdfHighlighterUtils] = useState<PdfHighlighterUtils>(null);
     return (
-        <div>
-            <div>
-                <button onClick={onPrevPage} disabled={pageNum <= 1 || pageRendering}>
-                    Previous
-                </button>
-                <span>Page {pageNum} of {pdfDoc.numPages}</span>
-                <button onClick={onNextPage} disabled={pageNum >= pdfDoc.numPages || pageRendering}>
-                    Next
-                </button>
-            </div>
-            <div>
-                <canvas ref={canvasRef}></canvas>
-            </div>
-            {pageRendering && <div>Rendering page...</div>}
-        </div>
-    );
+        <PdfLoader document={pdfUrl}>
+            {(pdfDocument) => (
+                <PdfHighlighter
+                    enableAreaSelection={event => event.altKey}
+                    pdfDocument={pdfDocument}
+                    utilsRef={(_pdfHighlighterUtils) => {
+                        setPdfHighlighterUtils(_pdfHighlighterUtils);
+                    }}
+                    highlights={highlights}>
+                        {}
+                </PdfHighlighter>
+            )}
+        </PdfLoader>
+    )
 };
-
-export default PdfViewer;

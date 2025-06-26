@@ -33,16 +33,10 @@ import requests
 from pdf2image import convert_from_bytes
 from typing import NamedTuple
 
-class BoundingBox(NamedTuple):
-    x_min: float
-    y_min: float
-    x_max: float
-    y_max: float
-
 class PDFMathFormula(NamedTuple):
     page: int
     formula: str | None
-    bbox: BoundingBox
+    bbox: list[float]
 
 from functools import lru_cache
 
@@ -87,12 +81,12 @@ def get_bounding_boxes(images: list) -> list[PDFMathFormula]:
             if result.boxes is not None and isinstance(result.boxes.data, torch.Tensor):
                 for box in result.boxes.data:
                     if math.isclose(box[5].item(), 8.0, abs_tol=1e-5):
-                        bbox = BoundingBox(
-                            x_min=box[0].item(),
-                            y_min=box[1].item(),
-                            x_max=box[2].item(),
-                            y_max=box[3].item()
-                        )
+                        bbox = [
+                            box[0].item(),
+                            box[1].item(),
+                            box[2].item(),
+                            box[3].item()
+                        ]
                         formulas.append(PDFMathFormula(page=i + 1, formula=None, bbox=bbox))
     return formulas
 
@@ -114,7 +108,7 @@ async def get_pdf(pdf_url: str):
 import json
 
 @lru_cache(maxsize=32)
-def get_pdf_regions(pdf_url: str) -> dict:
+def get_pdf_regions(pdf_url: str) -> list:
     """
     Get the bounding boxes of math formulas in a PDF file given its URL.
     This function caches the results to avoid repeated downloads and processing.
@@ -124,9 +118,13 @@ def get_pdf_regions(pdf_url: str) -> dict:
     images = convert_pdf_to_images(pdf_bytes)
     formulas = get_bounding_boxes(images)
 
-    enumerated_bboxes = {
-        i: f.bbox._asdict() for i, f in enumerate(formulas)
-    }
+    enumerated_bboxes = [
+        {
+            "bbox": f.bbox,
+            "pagenum": f.page,
+            "id": i
+         } for i, f in enumerate(formulas)
+    ]
     
     return enumerated_bboxes
 
@@ -144,27 +142,40 @@ async def predict_math_regions(pdf_url: str):
     except Exception as e:
         logging.error(f"Error processing PDF: {e}")
         return {"error": str(e)}
+
+@lru_cache(maxsize=32)
+def get_pdf_latex(pdf_url: str, latex_id: int) -> dict:
+    """
+    Get the LaTeX representation of a specific math region in a PDF file.
+    This function caches the results to avoid repeated downloads and processing.
+    """
+    logging.info(f"Getting LaTeX for region {latex_id} in PDF URL: {pdf_url}")
+    regions = get_pdf_regions(pdf_url)
+    
+    if latex_id not in regions:
+        raise ValueError("Region ID not found.")
+    
+    bbox = regions[latex_id]
+    pdf_bytes = download_pdf(pdf_url)
+    images = convert_pdf_to_images(pdf_bytes)
+    
+    # Assuming the region corresponds to the first page for simplicity
+    image = images[0].crop((bbox['x_min'], bbox['y_min'], bbox['x_max'], bbox['y_max']))
+    
+    latex = latex_model(image)
+    return {"latex": latex}
     
 @app.get("/get_latex_for_region/{region_id:int}/{pdf_url:path}")
 async def get_latex_for_region(region_id: int, pdf_url: str):
     """
     Endpoint to get the LaTeX representation of a specific math region in a PDF.
     """
-    logging.info(f"Received request for LaTeX of region {region_id} in PDF URL: {pdf_url}")
+    logging.info(f"Received request to get LaTeX for region {region_id} in PDF URL: {pdf_url}")
     try:
-        regions = get_pdf_regions(pdf_url)
-        if region_id not in regions:
-            return {"error": "Region ID not found."}
-        
-        bbox = regions[region_id]
-        pdf_bytes = download_pdf(pdf_url)
-        images = convert_pdf_to_images(pdf_bytes)
-        
-        # Assuming the region corresponds to the first page for simplicity
-        image = images[0].crop((bbox['x_min'], bbox['y_min'], bbox['x_max'], bbox['y_max']))
-        
-        latex = latex_model(image)
-        return {"latex": latex}
+        latex_data = get_pdf_latex(pdf_url, region_id)
+        if "latex" not in latex_data:
+            return {"message": "No LaTeX found for the specified region."}
+        return latex_data
     except Exception as e:
         logging.error(f"Error processing region: {e}")
         return {"error": str(e)}

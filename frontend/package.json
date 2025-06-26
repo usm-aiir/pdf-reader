@@ -12,7 +12,9 @@
   "dependencies": {
     "pdfjs-dist": "^5.3.31",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "react-pdf": "^10.0.1",
+    "react-pdf-highlighter-extended": "^8.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.29.0",
