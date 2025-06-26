@@ -82,7 +82,7 @@ const PdfViewer: React.FC<PdfViewerProps> = ({ pdfUrl }) => {
             }
 
             try {
-                const loadingTask = pdfjsLib.getDocument(pdfUrl);
+                const loadingTask = pdfjsLib.getDocument("http://localhost:9090/get_pdf/" + pdfUrl);
                 const pdf = await loadingTask.promise;
                 setPdfDoc(pdf);
                 setPageNum(1); // Reset to first page when new PDF loads

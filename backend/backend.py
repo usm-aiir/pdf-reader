@@ -1,35 +1,179 @@
-from flask import Flask, request, jsonify, send_from_directory
-from flask_cors import CORS
+from doclayout_yolo import YOLOv10
+
+from huggingface_hub import hf_hub_download
+
+import logging
+
+logging.basicConfig(level=logging.INFO)
+
+logging.info("Starting the PDF Math Parser API...")
+
+filepath = hf_hub_download(repo_id="juliozhao/DocLayout-YOLO-DocStructBench", filename="doclayout_yolo_docstructbench_imgsz1024.pt")
+model = YOLOv10(filepath)
+
+
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Adjust this to your frontend's URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to the PDF Math Parser API!"}
+
+from doclayout_yolo.engine.results import Results
 import requests
-import io
+from pdf2image import convert_from_bytes
+from typing import NamedTuple
+
+class BoundingBox(NamedTuple):
+    x_min: float
+    y_min: float
+    x_max: float
+    y_max: float
+
+class PDFMathFormula(NamedTuple):
+    page: int
+    formula: str | None
+    bbox: BoundingBox
+
+from functools import lru_cache
+
+@lru_cache(maxsize=32)
+def download_pdf(pdf_url: str) -> bytes:
+    """
+    Download the PDF file from the given URL and return its content as bytes.
+    """
+    logging.info(f"Downloading PDF from URL: {pdf_url}")
+    response = requests.get(pdf_url)
+    if response.status_code != 200:
+        raise ValueError("Failed to download PDF from the provided URL.")
+    return response.content
+
+def convert_pdf_to_images(pdf_bytes: bytes) -> list:
+    """
+    Convert the PDF bytes to a list of images.
+    """
+    logging.info("Converting PDF bytes to images...")
+    images = convert_from_bytes(pdf_bytes, dpi=300)
+    if not images:
+        raise ValueError("Failed to convert PDF to images.")
+    return images
+
+import torch
+import math
+from pix2tex.cli import LatexOCR
+from PIL import Image
+
+latex_model = LatexOCR()
+
+def get_bounding_boxes(images: list) -> list[PDFMathFormula]:
+    """
+    Analyze the images and extract math formulas using the YOLOv10 model.
+    """
+    formulas = []
+    for i, image in enumerate(images):
+        results: list[Results] = model(image)
+        if not results:
+            continue
+        for result in results:
+            if result.boxes is not None and isinstance(result.boxes.data, torch.Tensor):
+                for box in result.boxes.data:
+                    if math.isclose(box[5].item(), 8.0, abs_tol=1e-5):
+                        bbox = BoundingBox(
+                            x_min=box[0].item(),
+                            y_min=box[1].item(),
+                            x_max=box[2].item(),
+                            y_max=box[3].item()
+                        )
+                        formulas.append(PDFMathFormula(page=i + 1, formula=None, bbox=bbox))
+    return formulas
+
+from fastapi.responses import Response
+
+@app.get("/get_pdf/{pdf_url:path}")
+async def get_pdf(pdf_url: str):
+    """
+    Endpoint to get the PDF file from a given URL.
+    """
+    logging.info(f"Received request to get PDF from URL: {pdf_url}")
+    try:
+        pdf_bytes = download_pdf(pdf_url)
+        return Response(content=pdf_bytes, media_type="application/pdf")
+    except Exception as e:
+        logging.error(f"Error downloading PDF: {e}")
+        return {"error": str(e)}
+
 import json
 
-app = Flask(__name__)
-CORS(app)
+@lru_cache(maxsize=32)
+def get_pdf_regions(pdf_url: str) -> dict:
+    """
+    Get the bounding boxes of math formulas in a PDF file given its URL.
+    This function caches the results to avoid repeated downloads and processing.
+    """
+    logging.info(f"Getting PDF regions for URL: {pdf_url}")
+    pdf_bytes = download_pdf(pdf_url)
+    images = convert_pdf_to_images(pdf_bytes)
+    formulas = get_bounding_boxes(images)
 
-def extract_regions_from_pdf(pdf_path: str) -> dict:
-    # Placeholder function to simulate region extraction
-    # In a real application, this would involve PDF parsing and region detection logic
-    return {
-        "regions": [
-            {"id": 1, "name": "Region 1", "coordinates": [100, 150, 200, 250]},
-            {"id": 2, "name": "Region 2", "coordinates": [300, 350, 400, 450]}
-        ]
+    enumerated_bboxes = {
+        i: f.bbox._asdict() for i, f in enumerate(formulas)
     }
+    
+    return enumerated_bboxes
 
-@app.route('/api/get_pdf_with_regions/<path:pdf_path>', methods=['GET'])
-def get_pdf_with_regions(pdf_path: str):
+@app.get("/predict_math_regions/{pdf_url:path}")
+async def predict_math_regions(pdf_url: str):
+    """
+    Endpoint to predict math formulas in a PDF file given its URL.
+    """
+    logging.info(f"Received request to predict math regions for PDF URL: {pdf_url}")
     try:
-        # Construct the URL for the PDF file
-        pdf_url = f'http://localhost:5000/static/{pdf_path}'
-        
-        # Make a request to the PDF file
-        response = requests.get(pdf_url)
-        
-        if response.status_code == 200:
-            # Return the PDF file as a response
-            return send_from_directory('static', pdf_path, as_attachment=True)
-        else:
-            return jsonify({'error': 'PDF not found'}), 404
+        regions = get_pdf_regions(pdf_url)
+        if not regions:
+            return {"message": "No math formulas found in the PDF."}
+        return {"regions": regions}
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logging.error(f"Error processing PDF: {e}")
+        return {"error": str(e)}
+    
+@app.get("/get_latex_for_region/{region_id:int}/{pdf_url:path}")
+async def get_latex_for_region(region_id: int, pdf_url: str):
+    """
+    Endpoint to get the LaTeX representation of a specific math region in a PDF.
+    """
+    logging.info(f"Received request for LaTeX of region {region_id} in PDF URL: {pdf_url}")
+    try:
+        regions = get_pdf_regions(pdf_url)
+        if region_id not in regions:
+            return {"error": "Region ID not found."}
+        
+        bbox = regions[region_id]
+        pdf_bytes = download_pdf(pdf_url)
+        images = convert_pdf_to_images(pdf_bytes)
+        
+        # Assuming the region corresponds to the first page for simplicity
+        image = images[0].crop((bbox['x_min'], bbox['y_min'], bbox['x_max'], bbox['y_max']))
+        
+        latex = latex_model(image)
+        return {"latex": latex}
+    except Exception as e:
+        logging.error(f"Error processing region: {e}")
+        return {"error": str(e)}
+
+@app.get("/simple_test")
+def simple_test():
+    logging.info("DEBUG: Simple test endpoint hit successfully.")
+    return {"message": "Hello from simple test!"}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, port=9090)
