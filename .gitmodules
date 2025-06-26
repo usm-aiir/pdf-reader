@@ -1,3 +1,0 @@
-[submodule "backend/scanssd"]
-	path = backend/scanssd
-	url = https://github.com/MaliParag/ScanSSD.git
