@@ -1,0 +1,3 @@
+[submodule "backend/scanssd-xyc"]
+	path = backend/scanssd-xyc
+	url = https://gitlab.com/dprl/scanssd
