@@ -138,6 +138,9 @@ async def predict_math_regions(pdf_url: str):
         regions = get_pdf_regions(pdf_url)
         if not regions:
             return {"message": "No math formulas found in the PDF."}
+        logging.error(f"Found {len(regions)} math regions in the PDF.")
+        for region in regions:
+            logging.info(f"Region ID: {region['id']}, Page: {region['pagenum']}, BBox: {region['bbox']}")
         return {"regions": regions}
     except Exception as e:
         logging.error(f"Error processing PDF: {e}")
