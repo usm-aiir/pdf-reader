@@ -1,11 +1,10 @@
 body {
   margin: 0 0 0 0;
   padding: 0;
+  /* Darkish gray background for the entire page */
+  background-color: #212121;
 }
 
 #root {
-  margin: 0 0 0 0;
-}
-.PdfHighlighter {
   margin: 0 0 0 0;
 }

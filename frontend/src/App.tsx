@@ -16,7 +16,7 @@ function App() {
               const input = (e.target as HTMLFormElement).elements.namedItem("pdfPath") as HTMLInputElement;
               const pdfPath = input.value.trim();
               if (pdfPath) {
-                window.location.href = `/pdf/${encodeURIComponent(pdfPath)}`;
+                window.location.href = `/pdf/${pdfPath}`;
               }
             }
             }>
@@ -24,7 +24,7 @@ function App() {
               <button type="submit">Open PDF</button>
             </form>
           </div>} />
-          <Route path={`/pdf/:encodedPath`} element={<PdfViewer />} />
+          <Route path={`/pdf/*`} element={<PdfViewer />} />
         </Routes>
       </BrowserRouter>
     </>

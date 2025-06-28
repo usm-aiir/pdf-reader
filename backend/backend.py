@@ -57,6 +57,8 @@ def convert_pdf_to_images(pdf_bytes: bytes) -> list:
     """
     logging.info("Converting PDF bytes to images...")
     images = convert_from_bytes(pdf_bytes, dpi=300)
+    print(f"Converted PDF to {len(images)} images.")
+    print(f"Image sizes: {[image.size for image in images]}")
     if not images:
         raise ValueError("Failed to convert PDF to images.")
     return images
@@ -82,10 +84,10 @@ def get_bounding_boxes(images: list) -> list[PDFMathFormula]:
                 for box in result.boxes.data:
                     if math.isclose(box[5].item(), 8.0, abs_tol=1e-5):
                         bbox = [
-                            box[0].item(),
-                            box[1].item(),
-                            box[2].item(),
-                            box[3].item()
+                            box[0].item() / image.width,
+                            box[1].item() / image.height,
+                            box[2].item() / image.width,
+                            box[3].item() / image.height,
                         ]
                         formulas.append(PDFMathFormula(page=i + 1, formula=None, bbox=bbox))
     return formulas
