@@ -9,20 +9,11 @@ import type { DocumentCallback } from 'react-pdf/dist/shared/types.js';
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 import './PDFViewer.css';
+import type { FormulaRegion } from './types';
+import Highlight from './Highlight';
 
 
 interface PDFViewerProps {
-}
-
-interface FormulaRegion {
-  id: number;
-  pageNumber: number;
-  boundingRect: {
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-  };
 }
 
 function PDFViewer({ }: PDFViewerProps) {
@@ -63,29 +54,32 @@ function PDFViewer({ }: PDFViewerProps) {
   }, [pdfUrl]);
   const [pageScales, setPageScales] = useState<Record<number, {x: number, y: number}>>({});
   return (
-    <Document file={"http://localhost:9090/get_pdf/" + pdfUrl} onLoadSuccess={onDocumentLoadSuccess} >
-      {pageNumbers.map((pageNumber) => (
-        <div key={pageNumber} style={{ position: 'relative', marginBottom: '20px' }}>
-        <Page key={pageNumber} pageNumber={pageNumber} onRenderSuccess={(page) => {
-          setPageScales(prevScales => ({
-            ...prevScales,
-            [pageNumber]: {
-              x: page.width,
-              y: page.height
-            }
-          }));
-        }} />
-          {regions.filter(region => region.pageNumber === pageNumber).map(region => (
-            <div key={region.id} style={{
-              width: (region.boundingRect.x2 - region.boundingRect.x1) * (pageScales[pageNumber]?.x || 1),
-              height: (region.boundingRect.y2 - region.boundingRect.y1) * (pageScales[pageNumber]?.y || 1),
-              left: region.boundingRect.x1 * (pageScales[pageNumber]?.x || 1),
-              top: region.boundingRect.y1 * (pageScales[pageNumber]?.y || 1),
-            }} className='highlight'/>
-          ))}
-        </div>
-      ))}
-    </Document>
+    <>
+      <Document file={"http://localhost:9090/get_pdf/" + pdfUrl} onLoadSuccess={onDocumentLoadSuccess} >
+        {pageNumbers.map((pageNumber) => (
+          <div key={pageNumber} style={{ position: 'relative', marginBottom: '20px' }}>
+          <Page key={pageNumber} pageNumber={pageNumber} onRenderSuccess={(page) => {
+            setPageScales(prevScales => ({
+              ...prevScales,
+              [pageNumber]: {
+                x: page.width,
+                y: page.height
+              }
+            }));
+          }} />
+            {regions.filter(region => region.pageNumber === pageNumber).map(region => (
+              <Highlight
+                pdfUrl={pdfUrl}
+                key={region.id}
+                region={region}
+                pageWidth={pageScales[pageNumber]?.x}
+                pageHeight={pageScales[pageNumber]?.y}
+              />
+            ))}
+          </div>
+        ))}
+      </Document>
+    </>
   )
 }
 

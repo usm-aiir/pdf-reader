@@ -1,22 +1,13 @@
-from doclayout_yolo import YOLOv10
-
-from huggingface_hub import hf_hub_download
-
 import logging
 
 logging.basicConfig(level=logging.INFO)
 
 logging.info("Starting the PDF Math Parser API...")
 
-filepath = hf_hub_download(repo_id="juliozhao/DocLayout-YOLO-DocStructBench", filename="doclayout_yolo_docstructbench_imgsz1024.pt")
-model = YOLOv10(filepath)
-
-
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+app = FastAPI(debug=True)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Adjust this to your frontend's URL
@@ -51,7 +42,9 @@ def download_pdf(pdf_url: str) -> bytes:
         raise ValueError("Failed to download PDF from the provided URL.")
     return response.content
 
-def convert_pdf_to_images(pdf_bytes: bytes) -> list:
+from PIL import Image
+
+def convert_pdf_to_images(pdf_bytes: bytes) -> list[Image.Image]:
     """
     Convert the PDF bytes to a list of images.
     """
@@ -63,12 +56,12 @@ def convert_pdf_to_images(pdf_bytes: bytes) -> list:
         raise ValueError("Failed to convert PDF to images.")
     return images
 
-import torch
-import math
 from pix2tex.cli import LatexOCR
-from PIL import Image
+from pix2text import MathFormulaDetector
 
 latex_model = LatexOCR()
+math_detector = MathFormulaDetector()
+min_score = 0.75
 
 def get_bounding_boxes(images: list) -> list[PDFMathFormula]:
     """
@@ -76,20 +69,21 @@ def get_bounding_boxes(images: list) -> list[PDFMathFormula]:
     """
     formulas = []
     for i, image in enumerate(images):
-        results: list[Results] = model(image)
+        results = math_detector.detect(image)
         if not results:
             continue
         for result in results:
-            if result.boxes is not None and isinstance(result.boxes.data, torch.Tensor):
-                for box in result.boxes.data:
-                    if math.isclose(box[5].item(), 8.0, abs_tol=1e-5):
-                        bbox = [
-                            box[0].item() / image.width,
-                            box[1].item() / image.height,
-                            box[2].item() / image.width,
-                            box[3].item() / image.height,
-                        ]
-                        formulas.append(PDFMathFormula(page=i + 1, formula=None, bbox=bbox))
+            if isinstance(result, dict) and 'box' in result and 'score' in result:
+                if result['score'] >= min_score:
+                    # Box is a two dimensional list of coordinates
+                    bbox = [
+                        result['box'][0][0] / image.width,
+                        result['box'][0][1] / image.height,
+                        result['box'][2][0] / image.width,
+                        result['box'][2][1] / image.height,
+                    ]
+                    formulas.append(PDFMathFormula(page=i + 1, formula=None, bbox=bbox))
+        print(results)
     return formulas
 
 from fastapi.responses import Response
@@ -110,7 +104,7 @@ async def get_pdf(pdf_url: str):
 import json
 
 @lru_cache(maxsize=32)
-def get_pdf_regions(pdf_url: str) -> list:
+def get_pdf_regions(pdf_url: str) -> list[dict]:
     """
     Get the bounding boxes of math formulas in a PDF file given its URL.
     This function caches the results to avoid repeated downloads and processing.
@@ -140,7 +134,6 @@ async def predict_math_regions(pdf_url: str):
         regions = get_pdf_regions(pdf_url)
         if not regions:
             return {"message": "No math formulas found in the PDF."}
-        logging.error(f"Found {len(regions)} math regions in the PDF.")
         for region in regions:
             logging.info(f"Region ID: {region['id']}, Page: {region['pagenum']}, BBox: {region['bbox']}")
         return {"regions": regions}
@@ -157,15 +150,20 @@ def get_pdf_latex(pdf_url: str, latex_id: int) -> dict:
     logging.info(f"Getting LaTeX for region {latex_id} in PDF URL: {pdf_url}")
     regions = get_pdf_regions(pdf_url)
     
-    if latex_id not in regions:
-        raise ValueError("Region ID not found.")
+    if latex_id < 0 or latex_id >= len(regions):
+        raise ValueError(f"Invalid region ID: {latex_id}. Must be between 0 and {len(regions) - 1}.")
     
     bbox = regions[latex_id]
     pdf_bytes = download_pdf(pdf_url)
     images = convert_pdf_to_images(pdf_bytes)
     
-    # Assuming the region corresponds to the first page for simplicity
-    image = images[0].crop((bbox['x_min'], bbox['y_min'], bbox['x_max'], bbox['y_max']))
+    page_image = images[bbox['pagenum'] - 1]
+    # Convert bounding box coordinates to pixel values
+    x1, y1, x2, y2 = bbox['bbox']
+    width, height = page_image.size
+    x1, y1, x2, y2 = int(x1 * width), int(y1 * height), int(x2 * width), int(y2 * height)
+    image = page_image.crop((x1, y1, x2, y2))
+    logging.info(f"Extracted image for region {latex_id} with size: {image.size}")
     
     latex = latex_model(image)
     return {"latex": latex}
@@ -183,7 +181,7 @@ async def get_latex_for_region(region_id: int, pdf_url: str):
         return latex_data
     except Exception as e:
         logging.error(f"Error processing region: {e}")
-        return {"error": str(e)}
+        return {"error": e.__class__.__name__, "message": str(e)}
 
 @app.get("/simple_test")
 def simple_test():
