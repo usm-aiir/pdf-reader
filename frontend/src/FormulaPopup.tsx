@@ -7,21 +7,21 @@ interface FormulaPopupProps {
     key?: string;
     region: FormulaRegion;
     pdfUrl: string;
+    loadLatexForRegion: (regionId: FormulaRegion, pdfUrl: string) => Promise<string>;
 }
 
-function FormulaPopup({ region, pdfUrl }: FormulaPopupProps) {
+function FormulaPopup({ region, pdfUrl, loadLatexForRegion }: FormulaPopupProps) {
     const [formulaContent, setFormulaContent] = useState<string | null>(null);
     useEffect(() => {
+        if (region.latex) {
+            // If the LaTeX content is already available in the region, use it directly
+            setFormulaContent(region.latex);
+            return;
+        }
         // Fetch the formula content from the backend
-        fetch(`http://localhost:9090/get_latex_for_region/${region.id}/${pdfUrl}`)
-            .then(response => response.json())
-            .then(data => {
-                console.log('Fetched formula content:', data);
-                setFormulaContent(data.latex || 'No content found for this region');
-            })
-            .catch(error => {
-                console.error('Error fetching formula content:', error);
-                setFormulaContent('Error loading formula content');
+        loadLatexForRegion(region, pdfUrl)
+            .then(content => {
+                setFormulaContent(content);
             });
     }, [region.id]);
     return (

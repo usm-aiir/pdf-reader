@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Document, Page, } from 'react-pdf';
+import { Document } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?worker&url';
@@ -10,7 +10,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 import './PDFViewer.css';
 import type { FormulaRegion } from './types';
-import Highlight from './Highlight';
+import PDFPage from './PDFPage';
 
 
 interface PDFViewerProps {
@@ -52,31 +52,15 @@ function PDFViewer({ }: PDFViewerProps) {
         console.error('Error fetching formula regions:', error);
       });
   }, [pdfUrl]);
-  const [pageScales, setPageScales] = useState<Record<number, {x: number, y: number}>>({});
   return (
     <>
       <Document file={"http://localhost:9090/get_pdf/" + pdfUrl} onLoadSuccess={onDocumentLoadSuccess} >
         {pageNumbers.map((pageNumber) => (
-          <div key={pageNumber} style={{ position: 'relative', marginBottom: '20px' }}>
-          <Page key={pageNumber} pageNumber={pageNumber} onRenderSuccess={(page) => {
-            setPageScales(prevScales => ({
-              ...prevScales,
-              [pageNumber]: {
-                x: page.width,
-                y: page.height
-              }
-            }));
-          }} />
-            {regions.filter(region => region.pageNumber === pageNumber).map(region => (
-              <Highlight
-                pdfUrl={pdfUrl}
-                key={region.id}
-                region={region}
-                pageWidth={pageScales[pageNumber]?.x}
-                pageHeight={pageScales[pageNumber]?.y}
-              />
-            ))}
-          </div>
+          <PDFPage
+            key={pageNumber}
+            pageNumber={pageNumber}
+            regions={regions.filter(region => region.pageNumber === pageNumber)}
+            pdfUrl={pdfUrl} />
         ))}
       </Document>
     </>
