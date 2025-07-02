@@ -56,6 +56,17 @@ def convert_pdf_to_images(pdf_bytes: bytes) -> list[Image.Image]:
         raise ValueError("Failed to convert PDF to images.")
     return images
 
+@lru_cache(maxsize=32)
+def get_pdf_images(pdf_url: str) -> list[Image.Image]:
+    """
+    Get the images of the PDF file given its URL.
+    This function caches the results to avoid repeated downloads and processing.
+    """
+    logging.info(f"Getting PDF images for URL: {pdf_url}")
+    pdf_bytes = download_pdf(pdf_url)
+    images = convert_pdf_to_images(pdf_bytes)
+    return images
+
 from pix2tex.cli import LatexOCR
 from pix2text import MathFormulaDetector
 
@@ -110,8 +121,7 @@ def get_pdf_regions(pdf_url: str) -> list[dict]:
     This function caches the results to avoid repeated downloads and processing.
     """
     logging.info(f"Getting PDF regions for URL: {pdf_url}")
-    pdf_bytes = download_pdf(pdf_url)
-    images = convert_pdf_to_images(pdf_bytes)
+    images = get_pdf_images(pdf_url)
     formulas = get_bounding_boxes(images)
 
     enumerated_bboxes = [
@@ -141,7 +151,7 @@ async def predict_math_regions(pdf_url: str):
         logging.error(f"Error processing PDF: {e}")
         return {"error": str(e)}
 
-@lru_cache(maxsize=32)
+@lru_cache(maxsize=2048)
 def get_pdf_latex(pdf_url: str, latex_id: int) -> dict:
     """
     Get the LaTeX representation of a specific math region in a PDF file.
@@ -154,8 +164,7 @@ def get_pdf_latex(pdf_url: str, latex_id: int) -> dict:
         raise ValueError(f"Invalid region ID: {latex_id}. Must be between 0 and {len(regions) - 1}.")
     
     bbox = regions[latex_id]
-    pdf_bytes = download_pdf(pdf_url)
-    images = convert_pdf_to_images(pdf_bytes)
+    images = get_pdf_images(pdf_url)
     
     page_image = images[bbox['pagenum'] - 1]
     # Convert bounding box coordinates to pixel values

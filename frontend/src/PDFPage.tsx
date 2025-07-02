@@ -44,23 +44,12 @@ function PDFPage({ pageNumber, regions, pdfUrl }: PDFPageProps) {
                     // Make the span unselectable
                     (span as HTMLElement).style.userSelect = 'none';
                     (span as HTMLElement).style.pointerEvents = 'none';
-                    // // Insert an empty span if there is no empty span with id 'formula-span-{region.id}' right before the current span
-                    // if (!document.getElementById(`formula-span-${region.id}`)) {
-                    //     const emptySpan = document.createElement('span');
-                    //     emptySpan.id = `formula-span-${region.id}`;
-                    //     emptySpan.style.display = 'inline-block';
-                    //     emptySpan.style.width = '0';
-                    //     emptySpan.style.height = '0';
-                    //     emptySpan.textContent = 'Hello World'; // Placeholder text to ensure the span is rendered
-                    //     span.parentNode?.insertBefore(emptySpan, span);
-                    //     console.log(`Inserted empty span for region ${region.id} on page ${pageNumber}`);
-                    // }
-                    // Insert highlight component if it doesn't already exist
                     const existingHighlight = document.getElementById(`highlight-${region.id}`);
                     if (!existingHighlight) {
                         const container = document.createElement('span');
                         container.id = `highlight-${region.id}`;
                         span.parentNode?.insertBefore(container, span);
+                        span.ariaLabel = region.latex || '[Formula not yet loaded]';
                         const root = ReactDOM.createRoot(container);
                         root.render(
                             <Highlight
@@ -80,6 +69,54 @@ function PDFPage({ pageNumber, regions, pdfUrl }: PDFPageProps) {
             updateTextLayer();
         }
     }, [regions]);
+    const handleCopy = (event: ClipboardEvent) => {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+            event.preventDefault(); // Prevent the default copy action
+            const range = selection.getRangeAt(0);
+            const commonAncestor = range.commonAncestorContainer;
+            const treeWalker = document.createTreeWalker(
+                commonAncestor,
+                NodeFilter.SHOW_ELEMENT,
+                {
+                    acceptNode: (node) => {
+                        if (range.intersectsNode(node) && (node as HTMLElement).id.startsWith('highlight-')) {
+                            return NodeFilter.FILTER_ACCEPT;
+                        }
+                        return NodeFilter.FILTER_SKIP;
+                    }
+                }
+            );
+            let currentNode: Node | null = treeWalker.currentNode;
+            let newCopyText = '';
+            while (currentNode) {
+                console.log('Current node:', currentNode);
+                const highlightId = (currentNode as HTMLElement).id;
+                // Check if the current node is a highlight or a span
+                if (highlightId && highlightId.startsWith('highlight-')) {
+                    const regionId = highlightId.split('-')[1];
+                    const region = regions.find(r => r.id === parseInt(regionId, 10));
+                    if (region) {
+                        newCopyText += region.latex || '[Formula not yet loaded]';
+                    }
+                }
+                else {
+                    // If the node is not a highlight, get its text content
+                    newCopyText += (currentNode as HTMLElement).textContent || '';
+                }
+                currentNode = treeWalker.nextNode();
+            }
+            if (newCopyText) {
+                event.clipboardData?.setData('text/plain', newCopyText);
+            }
+        }
+    };
+    useEffect(() => {
+        document.addEventListener('copy', handleCopy);
+        return () => {
+            document.removeEventListener('copy', handleCopy);
+        };
+    }, [regions, pdfUrl]); // Add pdfUrl to dependencies to ensure it updates correctly
     return (
         <div key={pageNumber} style={{ position: 'relative', marginBottom: '20px' }}>
             <Page key={pageNumber} pageNumber={pageNumber} onRenderSuccess={(page) => {
@@ -90,15 +127,6 @@ function PDFPage({ pageNumber, regions, pdfUrl }: PDFPageProps) {
                     setPageLoadSuccess(true);
                     updateTextLayer();
                 }} />
-            {/* {regions.map(region => (
-                <Highlight
-                    pdfUrl={pdfUrl}
-                    key={region.id}
-                    region={region}
-                    pageWidth={width}
-                    pageHeight={height}
-                />
-            ))} */}
         </div>
     );
 }

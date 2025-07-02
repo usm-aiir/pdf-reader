@@ -1,7 +1,7 @@
 import FormulaPopup from "./FormulaPopup";
 import type { FormulaRegion } from "./types";
 import './Highlight.css';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface HighlightProps {
     region: FormulaRegion;
@@ -10,31 +10,32 @@ interface HighlightProps {
     pdfUrl: string;
 }
 
-function loadLatexForRegion(formulaRegion: FormulaRegion, pdfUrl: string): Promise<string> {
+async function loadLatexForRegion(formulaRegion: FormulaRegion, pdfUrl: string): Promise<string> {
     const regionId = formulaRegion.id;
-    return fetch(`http://localhost:9090/get_latex_for_region/${regionId}/${pdfUrl}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log('Fetched formula content:', data);
-            if (data.latex) {
-                formulaRegion.latex = data.latex; // Store LaTeX in the region object
-                return data.latex;
-            } else {
-                console.warn(`No LaTeX content found for region ${regionId}`);
-                return 'No LaTeX content available';
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching formula content:', error);
-            return 'Error loading formula content';
-        });
-}
+    const response = await fetch(`http://localhost:9090/get_latex_for_region/${regionId}/${pdfUrl}`);
+    const data = await response.json();
+    console.log('Fetched formula content:', data);
+    if (data.latex) {
+        formulaRegion.latex = data.latex; // Store LaTeX in the region object
+        return data.latex;
+    } else {
+        console.warn(`No LaTeX content found for region ${regionId}`);
+        return 'No LaTeX content available';
+    }
+};
 
 function Highlight({ region, pageWidth, pageHeight, pdfUrl }: HighlightProps) {
     const [popupVisible, setPopupVisible] = useState(false);
     const handleRegionClick = () => {
         setPopupVisible(!popupVisible);
     };
+    useEffect(() => {
+        // Load LaTeX for the region on load
+        if (!region.latex) {
+            loadLatexForRegion(region, pdfUrl);
+        }
+    }, [region, pdfUrl]);
+
     return (
         <div
             className="math-highlight"
@@ -55,3 +56,4 @@ function Highlight({ region, pageWidth, pageHeight, pdfUrl }: HighlightProps) {
 }
 
 export default Highlight;
+export { loadLatexForRegion };
