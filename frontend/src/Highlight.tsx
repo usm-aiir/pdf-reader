@@ -13,7 +13,6 @@ async function loadLatexForRegion(formulaRegion: FormulaRegion, pdfUrl: string):
     const regionId = formulaRegion.id;
     const response = await fetch(`http://localhost:9090/get_latex_for_region/${regionId}/${pdfUrl}`);
     const data = await response.json();
-    console.log('Fetched formula content:', data);
     if (data.latex) {
         formulaRegion.latex = data.latex; // Store LaTeX in the region object
         return data.latex;

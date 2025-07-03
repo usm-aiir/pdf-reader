@@ -77,7 +77,6 @@ function PDFPage({ pageNumber, regions, pdfUrl }: PDFPageProps) {
                     setWidth(page.width);
                     setHeight(page.height);
                 }} onRenderTextLayerSuccess={() => {
-                    console.log('Text layer rendered successfully for page:', pageNumber);
                     setPageLoadSuccess(true);
                     updateTextLayer();
                 }} />
