@@ -49,15 +49,17 @@ function PDFPage({ pageNumber, regions, pdfUrl }: PDFPageProps) {
                         const container = document.createElement('span');
                         container.id = `highlight-${region.id}`;
                         span.parentNode?.insertBefore(container, span);
-                        span.ariaLabel = region.latex || '[Formula not yet loaded]';
                         const root = ReactDOM.createRoot(container);
                         root.render(
-                            <Highlight
-                                region={region}
-                                pageWidth={width}
-                                pageHeight={height}
-                                pdfUrl={pdfUrl}
-                            />
+                            <>
+                                <Highlight
+                                    region={region}
+                                    pageWidth={width}
+                                    pageHeight={height}
+                                    pdfUrl={pdfUrl}
+                                />
+                                <span style={{ clip: 'rect(0, 0, 0, 0)', position: 'absolute' }}>${region.latex || '[Formula not yet loaded]'}$</span>
+                            </>
                         );
                     }
                 }
@@ -69,54 +71,6 @@ function PDFPage({ pageNumber, regions, pdfUrl }: PDFPageProps) {
             updateTextLayer();
         }
     }, [regions]);
-    const handleCopy = (event: ClipboardEvent) => {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-            event.preventDefault(); // Prevent the default copy action
-            const range = selection.getRangeAt(0);
-            const commonAncestor = range.commonAncestorContainer;
-            const treeWalker = document.createTreeWalker(
-                commonAncestor,
-                NodeFilter.SHOW_ELEMENT,
-                {
-                    acceptNode: (node) => {
-                        if (range.intersectsNode(node) && (node as HTMLElement).id.startsWith('highlight-')) {
-                            return NodeFilter.FILTER_ACCEPT;
-                        }
-                        return NodeFilter.FILTER_SKIP;
-                    }
-                }
-            );
-            let currentNode: Node | null = treeWalker.currentNode;
-            let newCopyText = '';
-            while (currentNode) {
-                console.log('Current node:', currentNode);
-                const highlightId = (currentNode as HTMLElement).id;
-                // Check if the current node is a highlight or a span
-                if (highlightId && highlightId.startsWith('highlight-')) {
-                    const regionId = highlightId.split('-')[1];
-                    const region = regions.find(r => r.id === parseInt(regionId, 10));
-                    if (region) {
-                        newCopyText += region.latex || '[Formula not yet loaded]';
-                    }
-                }
-                else {
-                    // If the node is not a highlight, get its text content
-                    newCopyText += (currentNode as HTMLElement).textContent || '';
-                }
-                currentNode = treeWalker.nextNode();
-            }
-            if (newCopyText) {
-                event.clipboardData?.setData('text/plain', newCopyText);
-            }
-        }
-    };
-    useEffect(() => {
-        document.addEventListener('copy', handleCopy);
-        return () => {
-            document.removeEventListener('copy', handleCopy);
-        };
-    }, [regions, pdfUrl]); // Add pdfUrl to dependencies to ensure it updates correctly
     return (
         <div key={pageNumber} style={{ position: 'relative', marginBottom: '20px' }}>
             <Page key={pageNumber} pageNumber={pageNumber} onRenderSuccess={(page) => {

@@ -1,7 +1,6 @@
-import FormulaPopup from "./FormulaPopup";
 import type { FormulaRegion } from "./types";
 import './Highlight.css';
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 interface HighlightProps {
     region: FormulaRegion;
@@ -25,10 +24,6 @@ async function loadLatexForRegion(formulaRegion: FormulaRegion, pdfUrl: string):
 };
 
 function Highlight({ region, pageWidth, pageHeight, pdfUrl }: HighlightProps) {
-    const [popupVisible, setPopupVisible] = useState(false);
-    const handleRegionClick = () => {
-        setPopupVisible(!popupVisible);
-    };
     useEffect(() => {
         // Load LaTeX for the region on load
         if (!region.latex) {
@@ -45,13 +40,9 @@ function Highlight({ region, pageWidth, pageHeight, pdfUrl }: HighlightProps) {
                 width: (region.boundingRect.x2 - region.boundingRect.x1) * (pageWidth || 1),
                 height: (region.boundingRect.y2 - region.boundingRect.y1) * (pageHeight || 1),
             }}
-            onClick={handleRegionClick}
             id={`highlight-${region.id}`}
             aria-label={region.latex || '[Formula not yet loaded]'}
-            onFocus={() => loadLatexForRegion(region, pdfUrl)} // Load LaTeX when focused
-        >
-            {popupVisible && <FormulaPopup region={region} pdfUrl={pdfUrl} loadLatexForRegion={loadLatexForRegion} />}
-        </div>
+        />
     );
 }
 
