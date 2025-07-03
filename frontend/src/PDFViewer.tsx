@@ -52,6 +52,39 @@ function PDFViewer({ }: PDFViewerProps) {
         console.error('Error fetching formula regions:', error);
       });
   }, [pdfUrl]);
+
+  const [boxPosition, setBoxPosition] = useState<{ top: number, left: number } | null>(null);
+
+  const handleTextSelection = () => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      if (rect && rect.width > 0 && rect.height > 0) {
+        setBoxPosition({
+          top: rect.bottom + window.scrollY + 5, // 5px below the selection
+          left: rect.left + window.scrollX
+        });
+      }
+      else {
+        setBoxPosition(null);
+      }
+    } else {
+      setBoxPosition(null);
+    }
+  }
+
+  useEffect(() => {
+    // Add event listener for text selection
+    document.addEventListener('mouseup', handleTextSelection);
+    // document.addEventListener('selectionchange', handleTextSelection);
+    return () => {
+      // Clean up the event listener
+      document.removeEventListener('mouseup', handleTextSelection);
+      // document.removeEventListener('selectionchange', handleTextSelection);
+    };
+  }, []);
+
   return (
     <>
       <Document file={"http://localhost:9090/get_pdf/" + pdfUrl} onLoadSuccess={onDocumentLoadSuccess} >
@@ -63,6 +96,16 @@ function PDFViewer({ }: PDFViewerProps) {
             pdfUrl={pdfUrl} />
         ))}
       </Document>
+      {boxPosition && (
+        <div className="selection-box" style={{
+          top: boxPosition.top,
+          left: boxPosition.left
+        }}>
+          <a href={`https://www.mathmex.com/?q=${encodeURIComponent(window.getSelection()?.toString() || '')}`} target="_blank" rel="noopener noreferrer">
+            Open in MathMex
+          </a>
+        </div>
+      )}
     </>
   )
 }
