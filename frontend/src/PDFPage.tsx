@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import type { FormulaRegion } from "./types";
 import { Page } from "react-pdf";
 import Highlight from "./Highlight";
@@ -11,7 +11,7 @@ interface PDFPageProps {
 
 import ReactDOM from 'react-dom/client'; // Import ReactDOM for dynamic rendering
 
-function PDFPage({ pageNumber, regions, pdfUrl }: PDFPageProps) {
+const PDFPage = memo(({ pageNumber, regions, pdfUrl }: PDFPageProps) => {
     const [width, setWidth] = useState<number>(0);
     const [height, setHeight] = useState<number>(0);
     const [pageLoadSuccess, setPageLoadSuccess] = useState(false);
@@ -82,6 +82,6 @@ function PDFPage({ pageNumber, regions, pdfUrl }: PDFPageProps) {
                 }} />
         </div>
     );
-}
+});
 
 export default PDFPage;

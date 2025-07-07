@@ -1,9 +1,9 @@
 .math-highlight {
-    background-color: rgba(255, 0, 0, 0.3);
+    background-color: rgba(255, 0, 0, 0.05);
     position: absolute;
     z-index: 1000;
     cursor: pointer;
     &:hover {
-        background-color: rgba(255, 0, 0, 0.5);
+        background-color: rgba(255, 0, 0, 0.3);
     }
 }

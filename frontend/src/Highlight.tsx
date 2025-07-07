@@ -9,9 +9,11 @@ interface HighlightProps {
     pdfUrl: string;
 }
 
+import { API } from "./PDFViewer";
+
 async function loadLatexForRegion(formulaRegion: FormulaRegion, pdfUrl: string): Promise<string> {
     const regionId = formulaRegion.id;
-    const response = await fetch(`http://localhost:9090/get_latex_for_region/${regionId}/${pdfUrl}`);
+    const response = await fetch(`${API}/get_latex_for_region/${regionId}/${pdfUrl}`);
     const data = await response.json();
     if (data.latex) {
         formulaRegion.latex = data.latex; // Store LaTeX in the region object
