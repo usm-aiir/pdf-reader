@@ -11,6 +11,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 import type { FormulaRegion } from './types';
 import PDFPage from './PDFPage';
 import SelectionButton from './SelectionButton';
+import MathMexResult from './MathMexResult';
 
 interface PDFViewerProps { }
 
@@ -20,6 +21,7 @@ function PDFViewer({ }: PDFViewerProps) {
   const path = window.location.pathname;
   const delimiterIndex = path.indexOf('/pdf/');
   const pdfUrl = delimiterIndex !== -1 ? path.substring(delimiterIndex + 5) : '';
+  const [queriesAndResults, setQueriesAndResults] = useState<{ query: string; result: string; spanId: Node | null }[]>([]);
 
   if (!pdfUrl || pdfUrl.trim() === '') {
     return <div>Please provide a PDF URL in the query string, e.g., /pdf/https://example.com/sample.pdf</div>;
@@ -53,9 +55,17 @@ function PDFViewer({ }: PDFViewerProps) {
       });
   }, [pdfUrl]);
 
-  const handleSelectionAction = (selectedText: string) => {
-    const queryUrl = `https://www.mathmex.com/?q=${encodeURIComponent(selectedText)}`;
-    window.open(queryUrl, '_blank');
+  const handleSelectionAction = (selectedText: string, selectedSpan: Node | null) => {
+    // Check if the selected text is empty
+    if (!selectedText.trim()) {
+      console.warn('No text selected for MathMex search.');
+      return;
+    }
+    const result = "This is a mock result for: " + selectedText; // Mock result for demonstration
+    setQueriesAndResults(prevResults => [
+      ...prevResults,
+      { query: selectedText, result, spanId: selectedSpan }
+    ]);
   };
 
   // --- Inline Styles Definition ---
@@ -79,20 +89,6 @@ function PDFViewer({ }: PDFViewerProps) {
     padding: '20px',
     boxShadow: '-2px 0 5px rgba(0, 0, 0, 0.1)',
     overflowY: 'auto',
-  };
-
-  const sidebarHeadingStyle: React.CSSProperties = {
-    marginTop: 0,
-    color: '#333',
-  };
-
-  const sidebarListStyle: React.CSSProperties = {
-    listStyleType: 'none',
-    padding: 0,
-  };
-
-  const sidebarListItemStyle: React.CSSProperties = {
-    marginBottom: '10px',
   };
 
   // Add a style for the individual PDF page container to control its width
@@ -136,17 +132,18 @@ function PDFViewer({ }: PDFViewerProps) {
               />
             </div>
           ))}
-          <div style={sidebarStyle}>
-            <h2 style={sidebarHeadingStyle}>Sidebar Content</h2>
-            <p>This is where you can add any information, controls, or additional features related to the PDF or your application.</p>
-            <ul style={sidebarListStyle}>
-              <li style={sidebarListItemStyle}>Item 1</li>
-              <li style={sidebarListItemStyle}>Item 2</li>
-              <li style={sidebarListItemStyle}>Item 3</li>
-            </ul>
-          </div>
         </Document>
         <SelectionButton onAction={handleSelectionAction} />
+      </div>
+      <div style={sidebarStyle}>
+        {queriesAndResults.length > 0 && 
+          queriesAndResults.map((qr) => (<MathMexResult
+              key={qr.query}
+              definitionText={qr.query}
+              mathMexContent={qr.result}
+              targetSpanId={qr.spanId}
+            />
+          ))}
       </div>
     </div>
   );

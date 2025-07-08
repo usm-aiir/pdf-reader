@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 interface SelectionButtonProps {
-  onAction: (selectedText: string) => void;
+  onAction: (selectedText: string, selectedSpan: Node | null) => void;
 }
 
 const SelectionButton: React.FC<SelectionButtonProps> = ({ onAction }) => {
-  const [selectionInfo, setSelectionInfo] = useState<{ text: string; rect: DOMRect | null }>({ text: '', rect: null });
+  const [selectionInfo, setSelectionInfo] = useState<{ text: string; rect: DOMRect | null; spanId: Node | null }>({ text: '', rect: null, spanId: null });
   const buttonRef = useRef<HTMLButtonElement>(null); // Ref for the button
 
   useEffect(() => {
@@ -14,9 +14,11 @@ const SelectionButton: React.FC<SelectionButtonProps> = ({ onAction }) => {
       if (selection && selection.toString().trim() !== '') {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
-        setSelectionInfo({ text: selection.toString(), rect });
+        const firstElement = range.startContainer.parentElement;
+        console.log('Selection Node:', firstElement); // Log the ID for debugging
+        setSelectionInfo({ text: selection.toString(), rect, spanId: firstElement });
       } else {
-        setSelectionInfo({ text: '', rect: null });
+        setSelectionInfo({ text: '', rect: null, spanId: null });
       }
     };
 
@@ -61,9 +63,9 @@ const SelectionButton: React.FC<SelectionButtonProps> = ({ onAction }) => {
     <button
       ref={buttonRef} // Attach the ref
       style={style}
-      onClick={() => onAction(selectionInfo.text)}
+      onClick={() => onAction(selectionInfo.text, selectionInfo.spanId)}
     >
-      Open in MathMex
+      Search in MathMex
     </button>
   );
 };
