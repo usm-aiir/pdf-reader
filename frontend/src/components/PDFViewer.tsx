@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Document } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -8,52 +8,24 @@ import { pdfjs } from 'react-pdf';
 import type { DocumentCallback } from 'react-pdf/dist/shared/types.js';
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-import type { FormulaRegion } from './types';
+import type { PDFDocumentMetadata } from '../types';
 import PDFPage from './PDFPage';
 import SelectionButton from './SelectionButton';
 import MathMexResult from './MathMexResult';
+import { API } from '../App';
 
-interface PDFViewerProps { }
+interface PDFViewerProps {
+    pdfDocumentMetadata?: PDFDocumentMetadata;
+}
 
-export const API = import.meta.env.MODE === 'development' ? 'http://localhost:9090' : 'https://pdf-api.mathmex.com';
-
-function PDFViewer({ }: PDFViewerProps) {
-  const path = window.location.pathname;
-  const delimiterIndex = path.indexOf('/pdf/');
-  const pdfUrl = delimiterIndex !== -1 ? path.substring(delimiterIndex + 5) : '';
+function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
   const [queriesAndResults, setQueriesAndResults] = useState<{ query: string; result: string; spanId: Node | null }[]>([]);
-
-  if (!pdfUrl || pdfUrl.trim() === '') {
-    return <div>Please provide a PDF URL in the query string, e.g., /pdf/https://example.com/sample.pdf</div>;
-  }
 
   const [numPages, setNumPages] = useState<number | null>(null);
   async function onDocumentLoadSuccess(pdf: DocumentCallback) {
     setNumPages(pdf.numPages);
   }
   const pageNumbers = Array.from({ length: numPages || 0 }, (_, i) => i + 1);
-
-  const [regions, setRegions] = useState<FormulaRegion[]>([]);
-  useEffect(() => {
-    fetch(`${API}/predict_math_regions/${pdfUrl}`)
-      .then(response => response.json())
-      .then(data => {
-        const newRegions: FormulaRegion[] = data.regions.map((region: any) => ({
-          id: region.id,
-          pageNumber: region.pagenum,
-          boundingRect: {
-            x1: region.bbox[0],
-            y1: region.bbox[1],
-            x2: region.bbox[2],
-            y2: region.bbox[3],
-          }
-        }))
-        setRegions(newRegions);
-      })
-      .catch(error => {
-        console.error('Error fetching formula regions:', error);
-      });
-  }, [pdfUrl]);
 
   const handleSelectionAction = (selectedText: string, selectedSpan: Node | null) => {
     // Check if the selected text is empty
@@ -108,27 +80,16 @@ function PDFViewer({ }: PDFViewerProps) {
     <div style={containerStyle}>
       <div style={contentStyle}>
         <Document
-          file={`${API}/get_pdf/${pdfUrl}`}
+          file={`${API}/get_pdf/${pdfDocumentMetadata?.url}`}
           onLoadSuccess={onDocumentLoadSuccess}
-          // The width property on Document sets the width for ALL pages.
-          // This is often the easiest way to control the overall PDF width.
-          // You can comment this out and use the pdfPageWrapperStyle if
-          // you need more granular control within PDFPage itself.
-          // For typical single-column PDF display, this is sufficient.
-          // width={800} // Example fixed width for the document
         >
           {pageNumbers.map((pageNumber) => (
             // Wrap PDFPage in a div with controlled width
             <div key={pageNumber} style={pdfPageWrapperStyle}>
               <PDFPage
                 pageNumber={pageNumber}
-                regions={regions.filter(region => region.pageNumber === pageNumber)}
-                pdfUrl={pdfUrl}
-                // Optionally, pass a width prop to PDFPage if it handles it.
-                // Assuming PDFPage uses react-pdf's <Page> internally,
-                // you might also set a scale or width directly on <Page>.
-                // For instance, if PDFPage renders <Page width={desiredWidth} />
-                // Then you could pass: pageRenderWidth={800}
+                regions={pdfDocumentMetadata?.regions.filter(region => region.pageNumber === pageNumber) || []}
+                pdfUrl={pdfDocumentMetadata?.url || ''}
               />
             </div>
           ))}

@@ -10,4 +10,9 @@ interface FormulaRegion {
     latex?: string; // Optional field for storing LaTeX content
 }
 
-export type { FormulaRegion }
+interface PDFDocumentMetadata {
+    url: string;
+    regions: FormulaRegion[];
+}
+
+export type { FormulaRegion, PDFDocumentMetadata }

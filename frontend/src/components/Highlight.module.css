@@ -1,4 +1,4 @@
-.math-highlight {
+.mathHighlight {
     background-color: rgba(255, 0, 0, 0.05);
     position: absolute;
     z-index: 1000;
@@ -6,4 +6,7 @@
     &:hover {
         background-color: rgba(255, 0, 0, 0.3);
     }
+}
+.mathHighlight_active {
+    background-color: rgba(255, 0, 0, 0.3);
 }
