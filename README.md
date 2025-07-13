@@ -25,7 +25,7 @@ Mac: `brew install poppler`
 
 Windows: Follow instructions at [oschwartz10612/poppler-windows](https://github.com/oschwartz10612/poppler-windows)
 
-Ubuntu: `sudo apt-get install poppler-utils`
+Ubuntu: `sudo apt install poppler-utils`
 
 ### Running
 
