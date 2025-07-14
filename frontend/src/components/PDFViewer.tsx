@@ -44,34 +44,35 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
   const containerStyle: React.CSSProperties = {
     display: 'flex',
     height: '100vh',
+    width: '100vw', // Ensure the container takes full viewport width
   };
 
   const contentStyle: React.CSSProperties = {
-    flexGrow: 1,
+    flexShrink: 0, // Prevent the content area from shrinking
     overflowY: 'auto',
     padding: '20px',
-    display: 'flex', // Use flex to center the document
-    flexDirection: 'column', // Stack pages vertically
-    alignItems: 'center', // Center pages horizontally
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    // Set a max-width for the content area to control PDF size
+    maxWidth: 'calc(100vw - 300px)', // Example: 300px for sidebar, adjust as needed
+    width: 'fit-content', // Allow content to take only as much width as needed by its children (the PDF)
   };
 
   const sidebarStyle: React.CSSProperties = {
-    width: '300px',
+    flexGrow: 1, // Allow the sidebar to grow and take remaining space
     backgroundColor: '#f0f0f0',
     padding: '20px',
     boxShadow: '-2px 0 5px rgba(0, 0, 0, 0.1)',
     overflowY: 'auto',
+    minWidth: '250px', // Optional: set a minimum width for the sidebar
   };
 
-  // Add a style for the individual PDF page container to control its width
-  // Note: react-pdf's <Page> component might render a canvas directly,
-  // so we might need to target the parent div that <PDFPage> renders.
-  // Assuming PDFPage renders a div that wraps the react-pdf <Page>
   const pdfPageWrapperStyle: React.CSSProperties = {
-    maxWidth: '800px', // Set a maximum width for the PDF pages (e.g., A4 width)
-    width: '100%', // Allow it to shrink if content area is smaller
-    marginBottom: '10px', // Space between pages
-    boxShadow: '0 0 8px rgba(0,0,0,0.2)', // Optional: Add a subtle shadow to pages
+    maxWidth: '800px', // This will cap the individual PDF page width
+    width: '100%', // Ensures it doesn't exceed its parent's width (contentStyle's max-width)
+    marginBottom: '10px',
+    boxShadow: '0 0 8px rgba(0,0,0,0.2)',
   };
 
   // --- End Inline Styles Definition ---
@@ -84,7 +85,6 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
           onLoadSuccess={onDocumentLoadSuccess}
         >
           {pageNumbers.map((pageNumber) => (
-            // Wrap PDFPage in a div with controlled width
             <div key={pageNumber} style={pdfPageWrapperStyle}>
               <PDFPage
                 pageNumber={pageNumber}
@@ -100,9 +100,8 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
         {queriesAndResults.length > 0 && 
           queriesAndResults.map((qr) => (<MathMexResult
               key={qr.query}
-              definitionText={qr.query}
-              mathMexContent={qr.result}
-              targetSpanId={qr.spanId}
+              query={qr.query}
+              result={qr.result}
             />
           ))}
       </div>

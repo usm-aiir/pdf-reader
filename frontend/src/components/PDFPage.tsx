@@ -25,18 +25,22 @@ const PDFPage = memo(({ pageNumber, regions, pdfUrl }: PDFPageProps) => {
             const spanBoundingRect = span.getBoundingClientRect();
             regions.forEach(region => {
                 const regionBoundingRect = region.boundingRect;
+                // Scale the region bounding rect to the current page dimensions
                 const scaledRegionBoundingRect = {
                     x1: regionBoundingRect.x1 * width,
                     y1: regionBoundingRect.y1 * height,
                     x2: regionBoundingRect.x2 * width,
                     y2: regionBoundingRect.y2 * height,
                 };
+                console.log('Scaled Region Bounding Rect:', scaledRegionBoundingRect);
+                console.log('Page dimensions:', { width, height });
                 const adjustedSpanBoundingRect = {
                     left: spanBoundingRect.left - (parentBoundingRect?.left || 0),
                     top: spanBoundingRect.top - (parentBoundingRect?.top || 0),
                     right: spanBoundingRect.right - (parentBoundingRect?.left || 0),
                     bottom: spanBoundingRect.bottom - (parentBoundingRect?.top || 0),
-                };// Check if the adjusted span bounding rect is within the scaled region bounding rect +/- 10 pixels
+                };
+                // Check if the adjusted span bounding rect is within the scaled region bounding rect +/- 10 pixels
                 if (
                     adjustedSpanBoundingRect.left >= scaledRegionBoundingRect.x1 - 10 &&
                     adjustedSpanBoundingRect.top >= scaledRegionBoundingRect.y1 - 10 &&

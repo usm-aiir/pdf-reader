@@ -3,15 +3,45 @@ import type { FormulaRegion, PDFDocumentMetadata } from "./types";
 import PDFViewer from "./components/PDFViewer";
 import PDFOpener from "./components/PDFOpener";
 import PDFLoadingPage from "./components/PDFLoadingPage";
+import PDFErrorPage from "./components/PDFErrorPage";
+
+import './App.css';
 
 export const API = import.meta.env.MODE === 'development' ? 'http://localhost:9090' : 'https://pdf-api.mathmex.com';
 
+/**
+ * Fetches mathematical formula regions from a PDF file.
+ *
+ * @param {string} pdfUrl - The URL of the PDF file to analyze.
+ * @returns {Promise<FormulaRegion[]>} A promise that resolves to an array of formula regions.
+ * Each region includes an ID, page number, and bounding rectangle coordinates.
+ *
+ * @throws {Error} Throws an error if the fetch request fails or if an error is returned from the API.
+ *
+ * @example
+ * const pdfUrl = "https://example.com/sample.pdf";
+ * fetchPDFRegions(pdfUrl)
+ *   .then((regions) => {
+ *     console.log("Formula regions:", regions);
+ *   })
+ *   .catch((error) => {
+ *     console.error("Error fetching formula regions:", error);
+ *   });
+ */
 async function fetchPDFRegions(pdfUrl: string): Promise<FormulaRegion[]> {
   const response = await fetch(`${API}/predict_math_regions/${pdfUrl}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch formula regions for ${pdfUrl}`);
   }
   const data = await response.json();
+  if (data.message && data.message === 'No math formulas found in the PDF.') {
+    console.warn(`No math formulas found in the PDF: ${pdfUrl}`);
+    return []; // Return an empty array if no regions are found
+  }
+  if (data.error && data.error !== '') {
+    console.error(`Error fetching regions for ${pdfUrl}:`, data.error);
+    throw new Error(data.error);
+  }
   return data.regions.map((region: any) => ({
     id: region.id,
     pageNumber: region.pagenum,
@@ -24,11 +54,22 @@ async function fetchPDFRegions(pdfUrl: string): Promise<FormulaRegion[]> {
   }));
 }
 
+/**
+ * Fetches and retrieves regions from a PDF document based on the provided URL.
+ * 
+ * @constant regions - An array of objects representing specific regions extracted from the PDF.
+ * Each region typically contains metadata such as coordinates, dimensions, and content.
+ * 
+ * @async
+ * @function fetchPDFRegions
+ * @param {string} pdfUrl - The URL of the PDF document to extract regions from.
+ * @returns {Promise<Array<Object>>} A promise that resolves to an array of region objects.
+ */
 async function fetchPDFMetadata(pdfUrl: string, onProgress: (progress: number) => void): Promise<PDFDocumentMetadata> {
   const regions = await fetchPDFRegions(pdfUrl);
   onProgress(50); // Update progress after fetching regions
-  // Make it so that the regions are all fetched in parallel
   let regionsLoaded = 0;
+  // Make it so that the regions are all fetched in parallel
   const fetchPromises = regions.map(region =>
     fetch(`${API}/get_latex_for_region/${region.id}/${pdfUrl}`)
       .then(response => {
@@ -69,14 +110,22 @@ function App() {
   }
   const [pdfDocumentMetadata, setPdfDocumentMetadata] = useState<PDFDocumentMetadata | null>(null);
   const [progress, setProgress] = useState(0);
+  const [pdfError, setPdfError] = useState<string | null>(null);
   useEffect(() => {
     fetchPDFMetadata(pdfUrl, (progressValue: number) => {
       setProgress(progressValue);
     })
       .then(metadata => setPdfDocumentMetadata(metadata))
-      .catch(error => console.error('Error fetching PDF metadata:', error));
+      .catch(error => { console.error('Error fetching PDF metadata:', error), setPdfError(error.message || 'An error occurred while fetching PDF metadata') });
   }, [pdfUrl]);
   if (!pdfDocumentMetadata) {
+    if (pdfError) {
+      return (
+        <>
+          <PDFErrorPage errorMessage={pdfError} />
+        </>
+      );
+    }
     return (
       <>
         <PDFLoadingPage progress={progress} statusMessage={progress >= 50 ? "Loading LaTeX content..." : "Loading PDF metadata..."} />

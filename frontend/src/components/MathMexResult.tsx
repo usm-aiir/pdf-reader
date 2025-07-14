@@ -1,92 +1,73 @@
-import React from 'react';
+// MathMexResult component definition
 
+import Latex from "react-latex-next";
+
+// It accepts title, introduction, and methodology as props
 interface MathMexResultProps {
-    definitionText: string;
-    mathMexContent: string;
-    targetSpanId: Node | null; // Changed from string to Node for better type safety
+  query: string;
+  result: string;
 }
 
-const MathMexResult = ({ definitionText, mathMexContent, targetSpanId }: MathMexResultProps) => {
-  const handleClick = () => {
-    if (targetSpanId && (targetSpanId as Element).scrollIntoView) {
-      (targetSpanId as Element).scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
-
-  // Define styles as JavaScript objects
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    marginTop: '20px',
-    border: '1px solid #ddd',
-    padding: '15px',
-    borderRadius: '8px',
-    backgroundColor: '#f9f9f9',
-  };
-
-  const stickynoteStyle: React.CSSProperties = {
-    backgroundColor: '#ffc',
-    border: '1px solid #e0e0b0',
-    padding: '10px',
-    marginRight: '20px',
-    borderRadius: '5px',
-    boxShadow: '2px 2px 5px rgba(0, 0, 0, 0.2)',
-    width: '180px',
-    minHeight: '80px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    cursor: 'pointer',
-    position: 'relative',
-  };
-
-  const stickynoteTextStyle: React.CSSProperties = {
-    fontFamily: "'Permanent Marker', cursive", // Note: font names with spaces need quotes
-    fontSize: '0.95em',
-    lineHeight: '1.3',
-    margin: '0',
-    color: '#333',
-  };
-
-  const stickynoteLinkIndicatorStyle: React.CSSProperties = {
-    position: 'absolute',
-    bottom: '5px',
-    right: '5px',
-    fontSize: '1.2em',
-    color: '#555',
-  };
-
-  const mathMexContentStyle: React.CSSProperties = {
-    flexGrow: 1,
-    backgroundColor: '#fff',
-    border: '1px solid #eee',
-    padding: '15px',
-    borderRadius: '5px',
-    overflowX: 'auto',
-  };
-
-  // Note: Styling the <pre> tag directly within mathMexContent is not possible with pure inline styles.
-  // You would need to apply styles directly to the <pre> tag itself.
-  const preStyle: React.CSSProperties = {
-    margin: '0',
-    whiteSpace: 'pre-wrap',
-    wordWrap: 'break-word',
-    fontFamily: "'Roboto Mono', monospace",
-    fontSize: '0.9em',
-    color: '#222',
-  };
-
-
+const MathMexResult = ({ query }: MathMexResultProps) => {
   return (
-    <div style={containerStyle}>
-      <div style={stickynoteStyle} onClick={handleClick}>
-        <p style={stickynoteTextStyle}>{definitionText}</p>
-        <div style={stickynoteLinkIndicatorStyle}>🔗</div>
-      </div>
-      <div style={mathMexContentStyle}>
-        <pre style={preStyle}>{mathMexContent}</pre>
-      </div>
+    <div style={{ ...mathMexResultStyles.card, ...mathMexResultStyles.marginY }}>
+      {/* Header Section */}
+      <header style={mathMexResultStyles.header}>
+        <h1 style={mathMexResultStyles.title as React.CSSProperties}>
+          <Latex>{query}</Latex>
+        </h1>
+      </header>
+
+      {/* Content Section */}
+      <section style={mathMexResultStyles.contentSection}>
+        <p style={{ ...mathMexResultStyles.paragraph, ...mathMexResultStyles.marginTop }}>
+          This is a mock result for: {query}
+        </p>
+      </section>
     </div>
   );
 };
 
+const mathMexResultStyles = {
+  card: {
+    backgroundColor: '#ffffff', // Equivalent to bg-white
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', // Equivalent to shadow-lg
+    borderRadius: '0.5rem', // Equivalent to rounded-xl
+    padding: '1rem', // Equivalent to p-4
+  },
+  marginY: {
+    marginTop: '2rem', // Equivalent to my-8
+    marginBottom: '2rem', // Equivalent to my-8
+  },
+  header: {
+    marginBottom: '1rem', // Equivalent to mb-4
+    paddingBottom: '0.75rem', // Equivalent to pb-3
+    borderBottom: '1px solid #e5e7eb', // Equivalent to border-b border-gray-200
+  },
+  title: {
+    fontSize: '1.5rem', // Equivalent to text-2xl (adjusted for sidebar)
+    fontWeight: '800', // Equivalent to font-extrabold
+    color: '#1f2937', // Equivalent to text-gray-800
+    marginBottom: '0.25rem', // Equivalent to mb-1
+    textAlign: 'center', // Equivalent to text-center
+    lineHeight: '1.3', // Adjust line height for better display of LaTeX in title
+  },
+  contentSection: {
+    color: '#374151', // Equivalent to text-gray-700
+    lineHeight: '1.625', // Equivalent to leading-relaxed
+    fontSize: '0.875rem', // Equivalent to text-sm
+  },
+  subHeading: {
+    fontSize: '1.25rem', // Equivalent to text-xl
+    fontWeight: '600', // Equivalent to font-semibold
+    color: '#1f2937', // Equivalent to text-gray-800
+    marginBottom: '0.5rem', // Equivalent to mb-2
+  },
+  paragraph: {
+    marginBottom: '0.75rem', // Equivalent to mb-3
+  },
+  marginTop: {
+    marginTop: '1rem', // Equivalent to mt-4
+  }
+};
 export default MathMexResult;
