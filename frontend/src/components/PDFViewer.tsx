@@ -11,7 +11,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 import type { PDFDocumentMetadata } from '../types';
 import PDFPage from './PDFPage';
 import SelectionButton from './SelectionButton';
-import MathMexResult from './MathMexResult';
+import MathMexSearchBar from './MathMexSearchBar';
 import { API } from '../App';
 
 interface PDFViewerProps {
@@ -97,13 +97,7 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
         <SelectionButton onAction={handleSelectionAction} />
       </div>
       <div style={sidebarStyle}>
-        {queriesAndResults.length > 0 && 
-          queriesAndResults.map((qr) => (<MathMexResult
-              key={qr.query}
-              query={qr.query}
-              result={qr.result}
-            />
-          ))}
+        <MathMexSearchBar />
       </div>
     </div>
   );
