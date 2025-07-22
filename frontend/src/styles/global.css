@@ -1,0 +1,47 @@
+:root {
+
+    /* Constants */
+    --primary-dark: #23223a;
+    --primary-light: #ececf0;
+    --primary-alt: #c7c1e6;
+
+    --primary-accent: #0074d9;
+    --accent-alt: #339cff;
+    --glow-accent: rgba(0, 116, 217, 0.15);
+
+    --border-radius: 25px;
+    --box-shadow: 0 4px 16px rgba(108, 79, 193, 0.2);
+
+    /* Light mode colors */
+    --container-color: #f5f6fa;
+    --background-color: #ececf0;
+
+    --button-color: #001fff;
+    --button-active-color: #003fff;
+    --primary-text: #0054ff;
+
+    /* MathLive color styles */
+    --keyboard-toolbar-text: var(--primary-dark);
+    --keyboard-border: var(--primary-accent);
+    --keyboard-background: var(--background-color);
+    --keyboard-accent-color: var(--primary-accent);
+
+    --keycap-background: var(--container-color);
+    --keycap-secondary-background: var(--primary-dark);
+
+    --keycap-text: var(--primary-dark);
+    --keycap-secondary-text: var(--primary-light);
+
+    --keycap-background-hover: var(--primary-dark);
+    --keycap-text-hover: var(--primary-light);
+    --keycap-secondary-text-hover: var(--primary-dark);
+
+    --caret-color: var(--primary-dark);
+
+    overflow-y: scroll;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    .root::-webkit-scrollbar {
+        display: none;
+    }
+}

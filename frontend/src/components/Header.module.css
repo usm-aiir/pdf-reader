@@ -1,0 +1,173 @@
+.header {
+    padding: 1.2rem 0;
+    text-align: center;
+    background-color: var(--container-color);
+    box-shadow: var(--box-shadow);
+    position: relative;
+    font-family: Inter;
+}
+
+:root[data-theme="dark"] .header {
+    box-shadow: none;
+}
+
+.header h1 {
+    font-size: 1.8rem;
+    margin-bottom: 0.3rem;
+    color: var(--button-color);
+    font-weight: 200;
+    letter-spacing: 1.5px;
+}
+
+
+.headerContent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.titleContainer {
+    margin: 0 15px;
+    flex-shrink: 0;
+}
+
+.title {
+    font-family: var(--font-cormorant-garamond);
+    font-size: 2.8rem;
+    margin-bottom: 0.3rem;
+    color: var(--button-color);
+    font-weight: 600;
+    letter-spacing: 1.5px;
+}
+
+.highlight {
+    color: var(--primary-accent);
+}
+
+.tagline {
+    font-family: var(--font-cormorant-garamond);
+    font-size: 1rem;
+    color: var(--primary-alt);
+    margin: 0;
+}
+
+/* Tablet and smaller desktop */
+@media (max-width: 768px) {
+    .header {
+        padding: 1.25rem 0;
+    }
+    
+    .header h1 {
+        font-size: 2.2rem;
+        letter-spacing: 1px;
+    }
+    
+    .title {
+        font-size: 2.2rem;
+        letter-spacing: 1px;
+    }
+    
+    .tagline {
+        font-size: 0.9rem;
+    }
+    
+    .ornament {
+        width: 50px;
+        height: 50px;
+    }
+    
+    .themeButton {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .themeIcon {
+        width: 18px;
+        height: 18px;
+    }
+    
+    .headerContent {
+        gap: 0.75rem;
+    }
+    
+    .titleContainer {
+        margin: 0 10px;
+    }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+    .header {
+        padding: 1rem 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .headerContent {
+        flex-direction: row;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .header h1 {
+        font-size: 1.8rem;
+        margin-bottom: 0.2rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .title {
+        font-size: 1.8rem;
+        margin-bottom: 0.2rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .tagline {
+        font-size: 0.8rem;
+    }
+    
+    .ornament {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .themeButton {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .themeIcon {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .titleContainer {
+        margin: 0 8px;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+    .header h1 {
+        font-size: 1.6rem;
+    }
+    
+    .title {
+        font-size: 1.6rem;
+    }
+    
+    .tagline {
+        font-size: 0.75rem;
+    }
+    
+    .headerContent {
+        gap: 0.25rem;
+    }
+    
+    .titleContainer {
+        margin: 0 5px;
+    }
+}

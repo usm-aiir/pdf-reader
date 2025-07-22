@@ -6,6 +6,8 @@ import PDFLoadingPage from "./components/PDFLoadingPage";
 import PDFErrorPage from "./components/PDFErrorPage";
 
 import './App.css';
+import './styles/global.css';
+import Header from "./components/Header";
 
 export const API = import.meta.env.MODE === 'development' ? 'http://localhost:9090' : 'https://pdf-api.mathmex.com';
 
@@ -121,21 +123,24 @@ function App() {
   if (!pdfDocumentMetadata) {
     if (pdfError) {
       return (
-        <>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+          <Header />
           <PDFErrorPage errorMessage={pdfError} />
-        </>
+        </div>
       );
     }
     return (
-      <>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+        <Header />
         <PDFLoadingPage progress={progress} statusMessage={progress >= 50 ? "Loading LaTeX content..." : "Loading PDF metadata..."} />
-      </>
-    )
+      </div>
+    );
   }
   return (
-    <>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+      <Header />
       <PDFViewer pdfDocumentMetadata={pdfDocumentMetadata} />
-    </>
+    </div>
   );
 }
 

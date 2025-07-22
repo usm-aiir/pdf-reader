@@ -131,8 +131,11 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
   // --- Inline Styles Definition ---
   const containerStyle: React.CSSProperties = {
     display: 'flex',
-    height: '100vh',
+    flexGrow: 1,
+    minHeight: '0',
+    overflow: 'hidden', // Prevents body scroll if internal elements overflow
     width: '100vw',
+    backgroundColor: '#f8f9fa', // Light background color
   };
 
   const contentStyle: React.CSSProperties = {
