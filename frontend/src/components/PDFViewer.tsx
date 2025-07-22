@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Document } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
@@ -11,15 +11,79 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker;
 import type { PDFDocumentMetadata } from '../types';
 import PDFPage from './PDFPage';
 import SelectionButton from './SelectionButton';
-import MathMexSearchBar from './MathMexSearchBar';
+import "mathlive"
 import { API } from '../App';
+
+export const MATHMEX_API = 'https://api.mathmex.com';
+
+async function performSearch(query: string): Promise<any> {
+  try {
+    const result = await fetch(`${MATHMEX_API}/search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: query,
+        sources: [],
+        mediaTypes: [],
+        from: 0,
+        size: 5
+      })
+    });
+    const json = result.json();
+    console.log("Search result:", json);
+  }
+  catch (error) {
+    console.error("Error performing search:", error);
+    throw error; // Re-throw the error for further handling
+  }
+}
 
 interface PDFViewerProps {
     pdfDocumentMetadata?: PDFDocumentMetadata;
 }
 
+interface MathfieldElement extends HTMLElement {
+  executeCommand: (command: string, ...args: any[]) => void;
+  focus: () => void;
+  setValue: (value: string) => void;
+  getValue: () => string;
+  latex: string;
+}
+
 function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
-  const [queriesAndResults, setQueriesAndResults] = useState<{ query: string; result: string; spanId: Node | null }[]>([]);
+  const mathFieldRef = useRef<MathfieldElement>(null);
+  const [isMathMode, setIsMathMode] = useState<boolean>(false); // State to track mode
+
+  useEffect(() => {
+      if (mathFieldRef.current) {
+          // Initialize with text mode as per your original logic
+          mathFieldRef.current.executeCommand("switchMode", "text");
+          mathFieldRef.current.focus();
+      }
+      const element = mathFieldRef.current as MathfieldElement;
+      element.addEventListener('input', () => {
+        if (element.getValue().trim() === '') {
+          // Automatically switch to text mode when the math field is empty
+          element.executeCommand("switchMode", "text");
+        }
+      });
+      element.addEventListener('mode-change', (event: CustomEvent) => {
+          setIsMathMode(event.detail.mode === 'math');
+      });
+      return () => {
+          // Cleanup event listener on unmount
+          element.removeEventListener('input', () => {});
+      };
+  }, []); // Empty dependency array to run once on mount
+
+  useEffect(() => {
+    if (mathFieldRef.current) {
+      mathFieldRef.current.executeCommand("switchMode", isMathMode ? "math" : "text");
+      mathFieldRef.current.focus(); // Keep focus on the mathfield after mode switch
+    }
+  }, [isMathMode]); // Re-run when isMathMode changes
 
   const [numPages, setNumPages] = useState<number | null>(null);
   async function onDocumentLoadSuccess(pdf: DocumentCallback) {
@@ -27,53 +91,101 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
   }
   const pageNumbers = Array.from({ length: numPages || 0 }, (_, i) => i + 1);
 
-  const handleSelectionAction = (selectedText: string, selectedSpan: Node | null) => {
+  const handleSelectionAction = (selectedText: string) => {
     // Check if the selected text is empty
     if (!selectedText.trim()) {
       console.warn('No text selected for MathMex search.');
       return;
     }
-    const result = "This is a mock result for: " + selectedText; // Mock result for demonstration
-    setQueriesAndResults(prevResults => [
-      ...prevResults,
-      { query: selectedText, result, spanId: selectedSpan }
-    ]);
+    // Always append selected text as plain text
+    mathFieldRef.current?.setValue(mathFieldRef.current.getValue() + ' ' + "\\text{" + selectedText + "}");
+  };
+
+  const handleSearch = () => {
+    const searchValue = mathFieldRef.current?.getValue();
+    if (searchValue) {
+      console.log("Performing search for:", searchValue);
+      // Here you would integrate your actual search logic,
+      // e.g., calling an API, filtering data, etc.
+      performSearch(searchValue)
+        .then(() => {
+          console.log("Search completed successfully.");
+        })
+        .catch(error => {
+          console.error("Search failed:", error);
+        });
+    } else {
+      console.warn("Search initiated, but the MathField is empty.");
+    }
   };
 
   // --- Inline Styles Definition ---
   const containerStyle: React.CSSProperties = {
     display: 'flex',
     height: '100vh',
-    width: '100vw', // Ensure the container takes full viewport width
+    width: '100vw',
   };
 
   const contentStyle: React.CSSProperties = {
-    flexShrink: 0, // Prevent the content area from shrinking
+    flexShrink: 0,
     overflowY: 'auto',
     padding: '20px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    // Set a max-width for the content area to control PDF size
-    maxWidth: 'calc(100vw - 300px)', // Example: 300px for sidebar, adjust as needed
-    width: 'fit-content', // Allow content to take only as much width as needed by its children (the PDF)
+    maxWidth: 'calc(100vw - 300px)',
+    width: 'fit-content',
   };
 
   const sidebarStyle: React.CSSProperties = {
-    flexGrow: 1, // Allow the sidebar to grow and take remaining space
+    flexGrow: 1,
     backgroundColor: '#f0f0f0',
     padding: '20px',
     boxShadow: '-2px 0 5px rgba(0, 0, 0, 0.1)',
     overflowY: 'auto',
-    minWidth: '250px', // Optional: set a minimum width for the sidebar
+    minWidth: '250px',
+    display: 'flex', // Added for layout of search bar and buttons
+    flexDirection: 'column', // Added for layout of search bar and buttons
+  };
+
+  const searchBarContainerStyle: React.CSSProperties = {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '15px', // Spacing below the search bar
+    gap: '8px', // Space between elements
+  };
+
+  const modeToggleButtonStyle: React.CSSProperties = {
+    padding: '8px 12px',
+    border: '1px solid #ccc',
+    borderRadius: '4px',
+    backgroundColor: '#e0e0e0',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap', // Prevent text wrapping
+  };
+
+  const searchButtonStyle: React.CSSProperties = {
+    padding: '8px 12px',
+    border: '1px solid #007bff',
+    borderRadius: '4px',
+    backgroundColor: '#007bff',
+    color: 'white',
+    cursor: 'pointer',
+    whiteSpace: 'nowrap', // Prevent text wrapping
   };
 
   const pdfPageWrapperStyle: React.CSSProperties = {
-    maxWidth: '800px', // This will cap the individual PDF page width
-    width: '100%', // Ensures it doesn't exceed its parent's width (contentStyle's max-width)
+    maxWidth: '800px',
+    width: '100%',
     marginBottom: '10px',
     boxShadow: '0 0 8px rgba(0,0,0,0.2)',
   };
+
+  useEffect(() => {
+    console.log('Mathfield value changed:', mathFieldRef.current?.getValue());
+    // Removed the automatic switch to text mode when empty,
+    // as we now have a manual toggle.
+  }, [mathFieldRef.current?.latex]);
 
   // --- End Inline Styles Definition ---
 
@@ -90,6 +202,12 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
                 pageNumber={pageNumber}
                 regions={pdfDocumentMetadata?.regions.filter(region => region.pageNumber === pageNumber) || []}
                 pdfUrl={pdfDocumentMetadata?.url || ''}
+                onHighlightClick={latex => {
+                  if (mathFieldRef.current) {
+                    mathFieldRef.current.setValue(mathFieldRef.current.getValue() + ' ' + latex);
+                    mathFieldRef.current.focus();
+                  }
+                }}
               />
             </div>
           ))}
@@ -97,7 +215,23 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
         <SelectionButton onAction={handleSelectionAction} />
       </div>
       <div style={sidebarStyle}>
-        <MathMexSearchBar />
+        <div style={searchBarContainerStyle}>
+          <button
+            style={modeToggleButtonStyle}
+            onClick={() => setIsMathMode(!isMathMode)}
+            title={isMathMode ? "Switch to Text Mode" : "Switch to Math Mode"}
+          >
+            {isMathMode ? "𝟄𝐚𝐛𝐜" : "𝑎𝑏𝑐"} {/* Unicode characters for visual representation */}
+          </button>
+          <math-field ref={mathFieldRef} placeholder="\[Search\ mathematics...\]" style={{ flexGrow: 1 }}></math-field>
+          <button
+            style={searchButtonStyle}
+            onClick={handleSearch}
+          >
+            Search
+          </button>
+        </div>
+        {/* Other sidebar content can go here */}
       </div>
     </div>
   );

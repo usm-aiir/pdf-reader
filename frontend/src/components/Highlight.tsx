@@ -7,21 +7,22 @@ interface HighlightProps {
     pageHeight?: number;
     pdfUrl: string;
     isHighlighted?: boolean; // Optional prop to indicate if the highlight is active
+    onClick?: (region: FormulaRegion) => void; // Optional click handler
 }
 
-function Highlight({ region, pageWidth, pageHeight, isHighlighted }: HighlightProps) {
-
+function Highlight({ region, pageWidth, pageHeight, isHighlighted, onClick }: HighlightProps) {
+    const width = (pageWidth || 1) * (region.boundingRect.x2 - region.boundingRect.x1);
+    const height = (pageHeight || 1) * (region.boundingRect.y2 - region.boundingRect.y1);
     return (
         <div
             className={`${styles.mathHighlight} ${isHighlighted ? styles.mathHighlight_active : ''}`}
             style={{
-                left: region.boundingRect.x1 * (pageWidth || 1),
-                top: region.boundingRect.y1 * (pageHeight || 1),
-                width: (region.boundingRect.x2 - region.boundingRect.x1) * (pageWidth || 1),
-                height: (region.boundingRect.y2 - region.boundingRect.y1) * (pageHeight || 1),
+                width: `${width}px`,
+                height: `${height}px`,
             }}
             id={`highlight-${region.id}`}
             aria-label={region.latex || '[Formula not yet loaded]'}
+            onClick={onClick ? () => onClick(region) : undefined}
         />
     );
 }

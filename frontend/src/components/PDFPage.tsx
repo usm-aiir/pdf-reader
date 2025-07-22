@@ -7,16 +7,15 @@ interface PDFPageProps {
     pageNumber: number;
     regions: FormulaRegion[];
     pdfUrl: string;
+    onHighlightClick?: (latex: string) => void;
 }
 
 import ReactDOM from 'react-dom/client'; // Import ReactDOM for dynamic rendering
 
-const PDFPage = memo(({ pageNumber, regions, pdfUrl }: PDFPageProps) => {
-    console.log(`Rendering page ${pageNumber} with ${regions.length} regions`);
+const PDFPage = memo(({ pageNumber, regions, pdfUrl, onHighlightClick }: PDFPageProps) => {
     const [width, setWidth] = useState<number>(0);
     const [height, setHeight] = useState<number>(0);
     const [pageLoadSuccess, setPageLoadSuccess] = useState(false);
-    const [highlightsShouldBeHighlighted, setHighlightsShouldBeHighlighted] = useState({} as Record<number, boolean>);
     const updateTextLayer = () => {
         const parent = document.querySelector(`.react-pdf__Page[data-page-number="${pageNumber}"] .react-pdf__Page__textContent`);
         const parentBoundingRect = parent?.getBoundingClientRect();
@@ -32,8 +31,6 @@ const PDFPage = memo(({ pageNumber, regions, pdfUrl }: PDFPageProps) => {
                     x2: regionBoundingRect.x2 * width,
                     y2: regionBoundingRect.y2 * height,
                 };
-                console.log('Scaled Region Bounding Rect:', scaledRegionBoundingRect);
-                console.log('Page dimensions:', { width, height });
                 const adjustedSpanBoundingRect = {
                     left: spanBoundingRect.left - (parentBoundingRect?.left || 0),
                     top: spanBoundingRect.top - (parentBoundingRect?.top || 0),
@@ -54,6 +51,12 @@ const PDFPage = memo(({ pageNumber, regions, pdfUrl }: PDFPageProps) => {
                     if (!existingHighlight) {
                         const container = document.createElement('span');
                         container.id = `highlight-${region.id}`;
+                        container.style.position = 'absolute';
+                        container.style.left = `${scaledRegionBoundingRect.x1}px`;
+                        container.style.top = `${scaledRegionBoundingRect.y1}px`;
+                        container.style.width = `${scaledRegionBoundingRect.x2 - scaledRegionBoundingRect.x1}px`;
+                        container.style.height = `${scaledRegionBoundingRect.y2 - scaledRegionBoundingRect.y1}px`;
+                        container.style.zIndex = '1000'; // Ensure it appears above other elements
                         span.parentNode?.insertBefore(container, span);
                         const root = ReactDOM.createRoot(container);
                         root.render(
@@ -63,10 +66,17 @@ const PDFPage = memo(({ pageNumber, regions, pdfUrl }: PDFPageProps) => {
                                     pageWidth={width}
                                     pageHeight={height}
                                     pdfUrl={pdfUrl}
-                                    isHighlighted={highlightsShouldBeHighlighted[region.id]}
+                                    onClick={region => {
+                                        if (onHighlightClick) {
+                                            console.log('Highlight clicked:', region.latex || '');
+                                            console.log('Highlight ID:', region.id);
+                                            onHighlightClick(region.latex || '');
+                                        }
+                                    }}
                                 />
                                 <span style={{ clip: 'rect(0, 0, 0, 0)', position: 'absolute' }}>${region.latex || '[Formula not yet loaded]'}$</span>
                             </>
+                            
                         );
                         // Removed invalid useEffect here. See below for correct placement.
                     }
@@ -79,44 +89,6 @@ const PDFPage = memo(({ pageNumber, regions, pdfUrl }: PDFPageProps) => {
             updateTextLayer();
         }
     }, [regions]);
-    // Add a global selectionchange event listener to update highlight state
-    useEffect(() => {
-        const onTextSelectionChange = () => {
-            const selection = window.getSelection();
-            if (selection && selection.rangeCount > 0) {
-                const range = selection.getRangeAt(0);
-                const newHighlights: Record<number, boolean> = {};
-                // regions.forEach(region => {
-                //     // Try to find the highlight container for this region
-                //     const highlightElem = document.getElementById(`highlight-${region.id}`);
-                //     if (highlightElem && range.intersectsNode(highlightElem)) {
-                //         newHighlights[region.id] = true;
-                //     } else {
-                //         newHighlights[region.id] = false;
-                //     }
-                // });
-                // setHighlightsShouldBeHighlighted(prev => ({
-                //     ...prev,
-                //     ...newHighlights,
-                // }));
-            } else {
-                // No selection, clear all highlights
-                // const cleared: Record<number, boolean> = {};
-                // regions.forEach(region => {
-                //     cleared[region.id] = false;
-                // });
-                // setHighlightsShouldBeHighlighted(prev => ({
-                //     ...prev,
-                //     ...cleared,
-                // }));
-            }
-        };
-        document.addEventListener('selectionchange', onTextSelectionChange);
-        return () => {
-            document.removeEventListener('selectionchange', onTextSelectionChange);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Only run once on mount
     return (
         <div key={pageNumber} style={{ position: 'relative', marginBottom: '20px' }}>
             <Page key={pageNumber} pageNumber={pageNumber} onRenderSuccess={(page) => {

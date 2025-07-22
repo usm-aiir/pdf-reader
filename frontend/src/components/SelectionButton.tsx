@@ -15,7 +15,6 @@ const SelectionButton: React.FC<SelectionButtonProps> = ({ onAction }) => {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
         const firstElement = range.startContainer.parentElement;
-        console.log('Selection Node:', firstElement); // Log the ID for debugging
         setSelectionInfo({ text: selection.toString(), rect, spanId: firstElement });
       } else {
         setSelectionInfo({ text: '', rect: null, spanId: null });
