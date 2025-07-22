@@ -13,12 +13,13 @@ import PDFPage from './PDFPage';
 import SelectionButton from './SelectionButton';
 import "mathlive"
 import { API } from '../App';
+import type { SearchResult } from './QueryAndResult';
+import QueryAndResult from './QueryAndResult';
 
-export const MATHMEX_API = 'https://api.mathmex.com';
 
-async function performSearch(query: string): Promise<any> {
+async function performSearch(query: string): Promise<SearchResult[]> {
   try {
-    const result = await fetch(`${MATHMEX_API}/search`, {
+    const result = await fetch(`${API}/search`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,8 +32,9 @@ async function performSearch(query: string): Promise<any> {
         size: 5
       })
     });
-    const json = result.json();
-    console.log("Search result:", json);
+    const json = await result.json();
+    console.log("Search results:", json.results);
+    return json.results as SearchResult[];
   }
   catch (error) {
     console.error("Error performing search:", error);
@@ -55,6 +57,7 @@ interface MathfieldElement extends HTMLElement {
 function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
   const mathFieldRef = useRef<MathfieldElement>(null);
   const [isMathMode, setIsMathMode] = useState<boolean>(false); // State to track mode
+  const [currentQueryAndResults, setCurrentQueryAndResults] = useState<{ query: string; results: SearchResult[] }[]>([]);
 
   useEffect(() => {
       if (mathFieldRef.current) {
@@ -108,8 +111,14 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
       // Here you would integrate your actual search logic,
       // e.g., calling an API, filtering data, etc.
       performSearch(searchValue)
-        .then(() => {
-          console.log("Search completed successfully.");
+        .then(results => {
+          console.log("Search results:", results);
+          setCurrentQueryAndResults(prev => [...prev, { query: searchValue, results }]);
+          // Optionally clear the math field after search
+          if (mathFieldRef.current) {
+            mathFieldRef.current.setValue('');
+            mathFieldRef.current.focus();
+          }
         })
         .catch(error => {
           console.error("Search failed:", error);
@@ -231,7 +240,21 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
             Search
           </button>
         </div>
-        {/* Other sidebar content can go here */}
+        <div style={{ flexGrow: 1, overflowY: 'auto', padding: '10px 0' }}>
+          {currentQueryAndResults.length > 0 ? (
+            currentQueryAndResults.map((item, index) => (
+              <QueryAndResult
+                key={index}
+                query={item.query}
+                results={item.results}
+              />
+            ))
+          ) : (
+                        <p style={{ textAlign: 'center', color: '#777', fontSize: '0.9em' }}>
+                            Perform a search to see results here.
+                        </p>
+                    )}
+                </div>
       </div>
     </div>
   );

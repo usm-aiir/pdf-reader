@@ -1,5 +1,7 @@
 import logging
 
+from fastapi.concurrency import asynccontextmanager
+
 # Configure logging to display INFO level messages
 logging.basicConfig(level=logging.INFO)
 
@@ -11,8 +13,18 @@ from fastapi import FastAPI
 # Import CORSMiddleware for handling Cross-Origin Resource Sharing
 from fastapi.middleware.cors import CORSMiddleware
 
+import httpx
+# Create an asynchronous HTTP client using httpx
+client = httpx.AsyncClient()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    # Clean up resources here
+    await client.aclose()
+
 # Create a FastAPI application instance with debug mode enabled
-app = FastAPI(debug=True)
+app = FastAPI(debug=True, lifespan=lifespan)
 # Add CORS middleware to allow requests from specific origins
 app.add_middleware(
     CORSMiddleware,
@@ -247,6 +259,59 @@ def simple_test():
     """
     logging.info("DEBUG: Simple test endpoint hit successfully.")
     return {"message": "Hello from simple test!"}
+
+from fastapi import Request
+from fastapi.responses import StreamingResponse
+
+mathmex_api = "https://mathmex.com/api"
+
+@app.post("/search")
+async def search(request: Request):
+    """
+    Search endpoint that forwards the request to the MathMex API.
+    """
+    logging.info(f"Search endpoint called with query: {request.query_params}")
+    forward_headers = {
+        key: value for key, value in request.headers.items()
+        if key.lower() not in ["host", "accept-encoding", "user-agent", "content-length"]
+    }
+    # Add Content-Type if it's not already there or to ensure it's correct
+    forward_headers["Content-Type"] = "application/json"
+    mathmex_response = await client.post(
+            f"{mathmex_api}/search",
+            json=await request.json(), # httpx handles JSON serialization here
+            headers=forward_headers,
+            # You might want to explicitly set a timeout for the external request
+            timeout=30.0 # Example timeout
+        )
+
+    async def generate_response_chunks():
+            async for chunk in mathmex_response.aiter_bytes():
+                yield chunk
+
+    # 6. Set headers from the MathMex response to your proxy response
+    # Exclude headers that should not be directly forwarded (e.g., transfer-encoding)
+    response_headers = {
+        key: value for key, value in mathmex_response.headers.items()
+        if key.lower() not in ["content-encoding", "transfer-encoding", "connection"]
+    }
+    # Ensure CORS headers are added by the middleware, not overwritten by proxied headers
+    response_headers.pop("access-control-allow-origin", None)
+    response_headers.pop("access-control-allow-methods", None)
+    response_headers.pop("access-control-allow-headers", None)
+
+    return StreamingResponse(
+        generate_response_chunks(),
+        status_code=mathmex_response.status_code,
+        headers=response_headers,
+        media_type=mathmex_response.headers.get("Content-Type") # Preserve content-type
+    )
+
+# This context manager is used to manage the lifespan of the FastAPI application
+
+# Ensure the FastAPI application runs when this script is executed directly
+# This is useful for development and testing purposes
+# It allows running the API server without needing to use an external server like Uvicorn or
 
 if __name__ == "__main__":
     import uvicorn
