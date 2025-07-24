@@ -3,3 +3,4 @@ pix2tex
 fastapi
 pdf2image
 uvicorn
+httpx
