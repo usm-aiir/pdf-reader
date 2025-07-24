@@ -36,7 +36,7 @@ app.add_middleware(
 )
 
 # Define a root endpoint for the API
-@app.get("/")
+@app.get("/pdf_reader/api/")
 def read_root():
     """
     Root endpoint that returns a welcome message.
@@ -142,7 +142,7 @@ def get_bounding_boxes(images: list) -> list[PDFMathFormula]:
 # Import Response from FastAPI for returning file content
 from fastapi.responses import Response
 
-@app.get("/get_pdf/{pdf_url:path}")
+@app.get("/pdf_reader/api/get_pdf/{pdf_url:path}")
 async def get_pdf(pdf_url: str):
     """
     Endpoint to get the PDF file from a given URL.
@@ -183,7 +183,7 @@ def get_pdf_regions(pdf_url: str) -> list[dict]:
     
     return enumerated_bboxes
 
-@app.get("/predict_math_regions/{pdf_url:path}")
+@app.get("/pdf_reader/api/predict_math_regions/{pdf_url:path}")
 async def predict_math_regions(pdf_url: str):
     """
     Endpoint to predict math formulas (their bounding box regions) in a PDF file given its URL.
@@ -234,8 +234,8 @@ def get_pdf_latex(pdf_url: str, latex_id: int) -> dict:
     # Convert the cropped image of the math formula to LaTeX string using LatexOCR
     latex = latex_model(image)
     return {"latex": latex}
-    
-@app.get("/get_latex_for_region/{region_id:int}/{pdf_url:path}")
+
+@app.get("/pdf_reader/api/get_latex_for_region/{region_id:int}/{pdf_url:path}")
 async def get_latex_for_region(region_id: int, pdf_url: str):
     """
     Endpoint to get the LaTeX representation of a specific math region in a PDF.
@@ -252,7 +252,7 @@ async def get_latex_for_region(region_id: int, pdf_url: str):
         # Return error details, including the exception class name and message
         return {"error": e.__class__.__name__, "message": str(e)}
 
-@app.get("/simple_test")
+@app.get("/pdf_reader/api/simple_test")
 def simple_test():
     """
     A simple test endpoint to verify the API is running.
@@ -265,7 +265,7 @@ from fastapi.responses import StreamingResponse
 
 mathmex_api = "https://mathmex.com/api"
 
-@app.post("/search")
+@app.post("/pdf_reader/api/search")
 async def search(request: Request):
     """
     Search endpoint that forwards the request to the MathMex API.
