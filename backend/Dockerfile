@@ -7,6 +7,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
+    libgl1-mesa-glx \
     poppler-utils \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
