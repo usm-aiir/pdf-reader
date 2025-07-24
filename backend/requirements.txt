@@ -4,3 +4,4 @@ fastapi
 pdf2image
 uvicorn
 httpx
+opencv-python
