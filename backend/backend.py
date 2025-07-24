@@ -315,5 +315,5 @@ async def search(request: Request):
 
 if __name__ == "__main__":
     import uvicorn
-    # Run the FastAPI application using Uvicorn on port 9090
-    uvicorn.run(app, port=9095)
+    # Run the FastAPI application using Uvicorn on port 9095
+    uvicorn.run(app, host="0.0.0.0", port=9095)
