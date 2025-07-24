@@ -1,0 +1,33 @@
+/* PDFErrorPage.module.css */
+.errorContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Removed: background-color, border-radius, box-shadow, padding */
+  margin: 2rem auto; /* Center the content block horizontally with some top/bottom margin */
+  max-width: 800px; /* Limit its maximum width for readability */
+  min-height: 200px; /* Ensure a minimum height for the content area */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.errorTitle {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #dc2626; /* Keeping red for error indication */
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.errorMessageDetail {
+  font-size: 1rem;
+  color: #b91c1c; /* Keeping red for error indication */
+  font-weight: 400;
+  text-align: center;
+  padding: 0 1rem; /* Still useful for inner text padding, especially on smaller screens */
+  max-width: 600px;
+  line-height: 1.5;
+}

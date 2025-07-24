@@ -1,0 +1,48 @@
+/* PDFLoadingPage.module.css */
+.loadingContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  /* Removed: background-color, border-radius, box-shadow, padding */
+  margin: 2rem auto; /* Center the content block horizontally with some top/bottom margin */
+  max-width: 800px; /* Max width for readability */
+  min-height: 200px; /* Minimum height for the content area */
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.loadingText {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.progressBarContainer {
+  width: 80%;
+  max-width: 400px;
+  height: 10px;
+  background-color: var(--primary-alt); /* This is the background of the progress bar itself, keep it */
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: var(--primary-accent); /* This is the fill of the progress bar itself, keep it */
+  border-radius: 5px;
+  transition: width 0.2s ease-out;
+}
+
+.statusMessage {
+  font-size: 1rem;
+  color: var(--primary-dark);
+  font-weight: 400;
+  text-align: center;
+  line-height: 1.5;
+}

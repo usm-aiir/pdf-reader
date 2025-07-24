@@ -9,7 +9,7 @@ import './App.css';
 import './styles/global.css';
 import Header from "./components/Header";
 
-export const API = import.meta.env.MODE === 'development' ? 'http://localhost:9090/pdf_reader/api' : 'https://mathmex.com/pdf_reader/api';
+export const API = import.meta.env.MODE === 'development' ? 'http://localhost:9095/pdf_reader/api' : 'https://mathmex.com/pdf_reader/api';
 
 /**
  * Fetches mathematical formula regions from a PDF file.
@@ -107,7 +107,10 @@ function App() {
   const pdfUrl = delimiterIndex !== -1 ? path.substring(delimiterIndex + 5) : '';
   if (!pdfUrl || pdfUrl.trim() === '') {
     return <>
-      <PDFOpener />
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
+        <Header />
+        <PDFOpener />
+      </div>
     </>
   }
   const [pdfDocumentMetadata, setPdfDocumentMetadata] = useState<PDFDocumentMetadata | null>(null);
