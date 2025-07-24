@@ -1,0 +1,133 @@
+/* PDFOpener.module.css */
+
+/* Main container for the whole page */
+.container {
+    min-height: 100vh;
+    display: flex;
+    /* Changed from center to flex-start to move content higher */
+    align-items: flex-start;
+    justify-content: center;
+    /* Added padding-top to give some space from the top */
+    padding: 4rem 1rem 1rem 1rem; /* Top, Right, Bottom, Left */
+    /* Original gradient, as global.css variables are single colors */
+    background: linear-gradient(to bottom right, #eff6ff, #e0e7ff);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Card-like container for the input and button */
+.card {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 1rem; /* rounded-2xl */
+    /* Using global --box-shadow variable */
+    box-shadow: var(--box-shadow);
+    width: 100%;
+    max-width: 28rem; /* max-w-md */
+    border: 1px solid #e5e7eb; /* border border-gray-200 */
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Card hover effect */
+.card:hover {
+    transform: scale(1.01); /* hover:scale-[1.01] */
+}
+
+/* Title of the UI */
+.title {
+    font-size: 2.25rem; /* text-4xl */
+    font-weight: 800; /* font-extrabold */
+    color: #1f2937; /* text-gray-800 */
+    margin-bottom: 2rem; /* mb-8 */
+    text-align: center; /* text-center */
+    letter-spacing: -0.025em; /* tracking-tight */
+}
+
+/* Wrapper for the input field to apply margin */
+.inputWrapper {
+    margin-bottom: 1.5rem; /* mb-6 */
+}
+
+/* Input field for the URL */
+.input {
+    width: 100%; /* w-full */
+    padding: 0.75rem 1.25rem; /* px-5 py-3 */
+    border: 1px solid #d1d5db; /* border border-gray-300 */
+    border-radius: 0.75rem; /* rounded-xl */
+    font-size: 1.125rem; /* text-lg */
+    color: #374151; /* text-gray-700 */
+    outline: none; /* focus:outline-none */
+    box-sizing: border-box; /* Ensure padding and border are included in the element's total width and height */
+    transition: all 0.3s ease-in-out;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06); /* shadow-inner */
+}
+
+/* Input focus effect */
+.input:focus {
+    border-color: #3b82f6; /* focus:border-blue-500 */
+    /* Using global --glow-accent variable for focus ring */
+    box-shadow: 0 0 0 4px var(--glow-accent); /* focus:ring-4 focus:ring-blue-300 */
+}
+
+/* Input hover effect */
+.input:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* hover:shadow-md */
+}
+
+/* Message display area */
+.message {
+    margin-bottom: 1.5rem; /* mb-6 */
+    padding: 1rem; /* p-4 */
+    border-radius: 0.5rem; /* rounded-lg */
+    font-size: 1rem; /* text-md */
+    text-align: center; /* text-center */
+    font-weight: 500; /* font-medium */
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Error message specific styles */
+.messageError {
+    background-color: #fee2e2; /* bg-red-100 */
+    color: #b91c1c; /* text-red-700 */
+    border: 1px solid #fca5a5; /* border-red-300 */
+}
+
+/* Success message specific styles (if needed in the future) */
+.messageSuccess {
+    background-color: #d1fae5; /* bg-green-100 */
+    color: #065f46; /* text-green-700 */
+    border: 1px solid #a7f3d0; /* border-green-300 */
+}
+
+/* Button to trigger the PDF opening action */
+.button {
+    width: 100%; /* w-full */
+    /* Using global --button-color and --primary-accent for gradient base */
+    background: linear-gradient(to right, var(--button-color), var(--primary-accent));
+    color: white; /* text-white */
+    font-weight: 700; /* font-bold */
+    padding: 1rem 1.5rem; /* py-4 px-6 */
+    border-radius: 0.75rem; /* rounded-xl, consistent with input */
+    box-sizing: border-box;
+    font-size: 1.25rem; /* text-xl */
+    transition: all 0.3s ease-in-out;
+    /* Using global --box-shadow for default button shadow */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-lg */
+    cursor: pointer;
+    border: none; /* Ensure no default button border */
+    outline: none; /* focus:outline-none */
+}
+
+/* Button hover effect */
+.button:hover {
+    /* Using global --button-active-color and --accent-alt for hover gradient */
+    background: linear-gradient(to right, var(--button-active-color), var(--accent-alt));
+    transform: scale(1.05); /* hover:scale-105 */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* hover:shadow-xl */
+}
+
+/* Button active (pressed) effect */
+.button:active {
+    transform: scale(0.95); /* active:scale-95 */
+}
