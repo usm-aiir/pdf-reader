@@ -16,6 +16,14 @@ import { API } from '../App';
 import type { SearchResult } from './QueryAndResult';
 import QueryAndResult from './QueryAndResult';
 
+// Add TypeScript declaration for the custom element
+declare global {
+    namespace JSX {
+        interface IntrinsicElements {
+            'math-field': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & { placeholder?: string };
+        }
+    }
+}
 
 async function performSearch(query: string): Promise<SearchResult[]> {
   try {
