@@ -16,6 +16,9 @@ import { API } from '../App';
 import type { SearchResult } from './QueryAndResult';
 import QueryAndResult from './QueryAndResult';
 
+// Import the CSS module
+import styles from './PDFViewer.module.css';
+
 // Add TypeScript declaration for the custom element
 declare global {
     namespace JSX {
@@ -136,88 +139,19 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
     }
   };
 
-  // --- Inline Styles Definition ---
-  const containerStyle: React.CSSProperties = {
-    display: 'flex',
-    flexGrow: 1,
-    minHeight: '0',
-    overflow: 'hidden', // Prevents body scroll if internal elements overflow
-    width: '100vw',
-    backgroundColor: '#f8f9fa', // Light background color
-  };
-
-  const contentStyle: React.CSSProperties = {
-    flexShrink: 0,
-    overflowY: 'auto',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    maxWidth: 'calc(100vw - 300px)',
-    width: 'fit-content',
-  };
-
-  const sidebarStyle: React.CSSProperties = {
-    flexGrow: 1,
-    backgroundColor: '#f0f0f0',
-    padding: '20px',
-    boxShadow: '-2px 0 5px rgba(0, 0, 0, 0.1)',
-    overflowY: 'auto',
-    minWidth: '250px',
-    display: 'flex', // Added for layout of search bar and buttons
-    flexDirection: 'column', // Added for layout of search bar and buttons
-  };
-
-  const searchBarContainerStyle: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '15px', // Spacing below the search bar
-    gap: '8px', // Space between elements
-  };
-
-  const modeToggleButtonStyle: React.CSSProperties = {
-    padding: '8px 12px',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    backgroundColor: '#e0e0e0',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap', // Prevent text wrapping
-  };
-
-  const searchButtonStyle: React.CSSProperties = {
-    padding: '8px 12px',
-    border: '1px solid #007bff',
-    borderRadius: '4px',
-    backgroundColor: '#007bff',
-    color: 'white',
-    cursor: 'pointer',
-    whiteSpace: 'nowrap', // Prevent text wrapping
-  };
-
-  const pdfPageWrapperStyle: React.CSSProperties = {
-    maxWidth: '800px',
-    width: '100%',
-    marginBottom: '10px',
-    boxShadow: '0 0 8px rgba(0,0,0,0.2)',
-  };
-
   useEffect(() => {
     console.log('Mathfield value changed:', mathFieldRef.current?.getValue());
-    // Removed the automatic switch to text mode when empty,
-    // as we now have a manual toggle.
   }, [mathFieldRef.current?.latex]);
 
-  // --- End Inline Styles Definition ---
-
   return (
-    <div style={containerStyle}>
-      <div style={contentStyle}>
+    <div className={styles.container}>
+      <div className={styles.content}>
         <Document
           file={`${API}/get_pdf/${pdfDocumentMetadata?.url}`}
           onLoadSuccess={onDocumentLoadSuccess}
         >
           {pageNumbers.map((pageNumber) => (
-            <div key={pageNumber} style={pdfPageWrapperStyle}>
+            <div key={pageNumber} className={styles.pdfPageWrapper}>
               <PDFPage
                 pageNumber={pageNumber}
                 regions={pdfDocumentMetadata?.regions.filter(region => region.pageNumber === pageNumber) || []}
@@ -234,10 +168,10 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
         </Document>
         <SelectionButton onAction={handleSelectionAction} />
       </div>
-      <div style={sidebarStyle}>
-        <div style={searchBarContainerStyle}>
+      <div className={styles.sidebar}>
+        <div className={styles.searchBarContainer}>
           <button
-            style={modeToggleButtonStyle}
+            className={styles.modeToggleButton}
             onClick={() => setIsMathMode(!isMathMode)}
             title={isMathMode ? "Switch to Text Mode" : "Switch to Math Mode"}
           >
@@ -245,7 +179,7 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
           </button>
           <math-field ref={mathFieldRef} placeholder="\[Search\ mathematics...\]" style={{ flexGrow: 1 }}></math-field>
           <button
-            style={searchButtonStyle}
+            className={styles.searchButton}
             onClick={handleSearch}
           >
             Search
@@ -261,7 +195,7 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
               />
             ))
           ) : (
-                        <p style={{ textAlign: 'center', color: '#777', fontSize: '0.9em' }}>
+                        <p className={styles.noResultsMessage}>
                             Perform a search to see results here.
                         </p>
                     )}

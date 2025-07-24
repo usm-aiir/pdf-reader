@@ -1,0 +1,52 @@
+/* QueryAndResult.module.css */
+
+.container {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 15px;
+    background-color: #fff; /* Keeping specific white, as global --container-color is different */
+    box-shadow: var(--box-shadow); /* Using global box-shadow */
+    display: flex;
+    flex-direction: column;
+    gap: 10px; /* Space between query and results */
+}
+
+.querySection {
+    padding: 8px;
+    background-color: #e9f7ef; /* Light green background for query */
+    border-radius: 5px;
+    border: 1px solid #d4edda;
+}
+
+.queryLabel {
+    font-size: 0.85em;
+    font-weight: bold;
+    color: #28a745; /* Green color for "Your Query" */
+    margin-bottom: 5px;
+}
+
+.resultsSection {
+    border-top: 1px dashed #eee; /* Dashed line separator */
+    padding-top: 10px;
+    margin-top: 5px;
+    display: flex; /* Enable flexbox for results */
+    flex-wrap: wrap; /* Allow results to wrap to the next line */
+    gap: 10px; /* Space between result chips */
+    justify-content: flex-start; /* Align items to the start */
+}
+
+.resultsLabel {
+    font-size: 0.85em;
+    font-weight: bold;
+    color: var(--primary-accent); /* Using global primary accent color */
+    margin-bottom: 8px;
+    width: 100%; /* Make the label take full width */
+}
+
+.noResults {
+    font-size: 0.8em;
+    color: #777;
+    font-style: italic;
+    width: 100%; /* Make "no results" message take full width */
+}

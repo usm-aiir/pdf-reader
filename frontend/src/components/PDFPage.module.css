@@ -1,0 +1,21 @@
+/* PDFPage.module.css */
+
+/* Container for each PDF page */
+.pageContainer {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+/* Styles for the dynamically created highlight container */
+.highlightContainer {
+    position: absolute;
+    z-index: 1000; /* Ensure it appears above other elements */
+    /* Left, top, width, height are set dynamically via JavaScript */
+}
+
+/* Styles for the hidden LaTeX span within the highlight */
+.latexSpan {
+    clip: rect(0, 0, 0, 0); /* Hides the element visually */
+    position: absolute; /* Positions it out of flow */
+    /* Other properties like overflow: hidden; text-indent: -9999px; could also be used for screen readers */
+}

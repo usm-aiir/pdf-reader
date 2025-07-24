@@ -1,4 +1,6 @@
+// SelectionButton.tsx
 import React, { useState, useEffect, useRef } from 'react';
+import styles from './SelectionButton.module.css'; // Import the CSS module
 
 interface SelectionButtonProps {
   onAction: (selectedText: string, selectedSpan: Node | null) => void;
@@ -14,6 +16,9 @@ const SelectionButton: React.FC<SelectionButtonProps> = ({ onAction }) => {
       if (selection && selection.toString().trim() !== '') {
         const range = selection.getRangeAt(0);
         const rect = range.getBoundingClientRect();
+        // Get the first parent element of the selection start container
+        // This is a basic approach; for more robust span identification,
+        // you might need to traverse up or assign unique IDs to spans.
         const firstElement = range.startContainer.parentElement;
         setSelectionInfo({ text: selection.toString(), rect, spanId: firstElement });
       } else {
@@ -37,31 +42,24 @@ const SelectionButton: React.FC<SelectionButtonProps> = ({ onAction }) => {
     };
   }, []);
 
-  const style: React.CSSProperties = {
-    position: 'absolute', // Use 'absolute' if you plan to append it to a specific container, otherwise 'fixed' for viewport
+  // If no text is selected, don't render the button at all
+  if (!selectionInfo.text) {
+    return null;
+  }
+
+  // Calculate dynamic position based on selection rectangle
+  const dynamicStyle: React.CSSProperties = {
+    position: 'absolute', // Position is absolute relative to the nearest positioned ancestor
     left: selectionInfo.rect ? `${selectionInfo.rect.right + window.scrollX - 50}px` : '0',
     top: selectionInfo.rect ? `${selectionInfo.rect.bottom + window.scrollY + 5}px` : '0',
-    zIndex: 1000,
-    background: '#1976d2',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 4,
-    padding: '6px 12px',
-    cursor: 'pointer',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-    visibility: selectionInfo.text ? 'visible' : 'hidden',
-    opacity: selectionInfo.text ? 1 : 0, // Use opacity for smoother transitions if desired
-    transition: 'opacity 0.2s ease-in-out',
   };
-
-  if (!selectionInfo.text) {
-    return null; // Don't render if no text is selected
-  }
 
   return (
     <button
       ref={buttonRef} // Attach the ref
-      style={style}
+      // Apply base styles and conditionally add the 'visible' class
+      className={`${styles.selectionButton} ${selectionInfo.text ? styles.selectionButtonVisible : ''}`}
+      style={dynamicStyle} // Apply dynamic position via inline style
       onClick={() => onAction(selectionInfo.text, selectionInfo.spanId)}
     >
       Search in MathMex

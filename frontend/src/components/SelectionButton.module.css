@@ -1,0 +1,37 @@
+/* SelectionButton.module.css */
+.selectionButton {
+  z-index: 1000;
+  background: var(--primary-accent); /* Using global primary-accent color */
+  color: var(--primary-light); /* Using global primary-light color for text */
+  border: none;
+  border-radius: 4px; /* Keeping original smaller border-radius for a button */
+  padding: 6px 12px;
+  cursor: pointer;
+  /* Using a lighter custom shadow for this floating button, as global --box-shadow might be too heavy */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0; /* Default hidden state, controlled by JS for visibility */
+  transition: opacity 0.2s ease-in-out, transform 0.1s ease-out; /* Smooth transitions */
+  font-family: 'Inter', sans-serif; /* Ensure font consistency */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+/* State when the button is visible (controlled by JS adding/removing the component) */
+.selectionButtonVisible {
+  opacity: 1;
+}
+
+/* Hover state */
+.selectionButton:hover {
+  background: var(--accent-alt); /* A slightly different color on hover */
+  transform: translateY(-2px); /* Slight lift effect */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Slightly stronger shadow on hover */
+}
+
+/* Active (pressed) state */
+.selectionButton:active {
+  transform: translateY(0); /* Press down effect */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* Lighter shadow when pressed */
+  background: var(--primary-accent); /* Revert to base accent color when pressed */
+}
