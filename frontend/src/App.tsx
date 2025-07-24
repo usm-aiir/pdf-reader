@@ -9,7 +9,7 @@ import './App.css';
 import './styles/global.css';
 import Header from "./components/Header";
 
-export const API = import.meta.env.MODE === 'development' ? 'http://localhost:9090' : 'https://pdf-api.mathmex.com';
+export const API = import.meta.env.MODE === 'development' ? 'http://localhost:9090' : 'https://mathmex.com/pdf_reader/api';
 
 /**
  * Fetches mathematical formula regions from a PDF file.
