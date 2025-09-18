@@ -43,5 +43,10 @@
     "react-pdf-highlighter-extended": {
       "pdfjs-dist": "4.4.168"
     }
-  }
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.5.0"
+  },
+  "engineStrict": true
 }
