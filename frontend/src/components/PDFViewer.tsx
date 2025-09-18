@@ -101,8 +101,15 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
 
   const [numPages, setNumPages] = useState<number | null>(null);
   async function onDocumentLoadSuccess(pdf: DocumentCallback) {
+    console.log('PDF loaded successfully:', pdf.numPages, 'pages');
     setNumPages(pdf.numPages);
   }
+  
+  function onDocumentLoadError(error: Error) {
+    console.error('PDF load error:', error);
+    console.error('Error details:', error.message);
+  }
+
   const pageNumbers = Array.from({ length: numPages || 0 }, (_, i) => i + 1);
 
   const handleSelectionAction = (selectedText: string) => {
@@ -149,6 +156,7 @@ function PDFViewer({ pdfDocumentMetadata }: PDFViewerProps) {
         <Document
           file={`${API}/get_pdf/${pdfDocumentMetadata?.url}`}
           onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={onDocumentLoadError}
         >
           {pageNumbers.map((pageNumber) => (
             <div key={pageNumber} className={styles.pdfPageWrapper}>

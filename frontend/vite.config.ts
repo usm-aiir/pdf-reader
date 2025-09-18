@@ -5,4 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   base: '/pdf_reader/',
   plugins: [react()],
+  worker: {
+    format: 'es'
+  },
+  optimizeDeps: {
+    include: ['pdfjs-dist']
+  }
 })
